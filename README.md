@@ -7,7 +7,7 @@
 
 ## 📖 Overview
 
-Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), payments, and staff management.
+Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), payments, staff/payroll management, inventory, and CRM.
 
 Built for extreme low-latency at the edge, the API runs on **Bun** and leverages **ElysiaJS** to deliver near-instant responses to customer mobile apps, staff devices, and admin web dashboards.
 
@@ -68,6 +68,7 @@ Kwickly API adheres strictly to enterprise-grade architectural standards:
 - **Cache-Aside:** High-read, low-write operations (like fetching Menus and Branch Configs) are wrapped in custom Redis `withCache` helpers.
 - **Automated Audit Logs:** The system features a globally registered Elysia `auditPlugin` that automatically tracks and records all mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`) with user, tenant, and IP context without slowing down the request lifecycle.
 - **Zero-Downtime Migrations:** Migrations must always be additive (Expand & Contract pattern).
+- **Production Readiness:** Out-of-the-box support for Edge Rate Limiting, HTTP Security Headers, Global Error Sanitization, and Graceful Server Shutdowns (SIGINT/SIGTERM handling) for true zero-downtime reliability.
 
 ## 📄 License
 Proprietary software. All rights reserved by Kwickly.

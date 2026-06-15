@@ -1,7 +1,7 @@
 import { eq, and, isNull } from 'drizzle-orm';
 import crypto from 'crypto';
 import { db } from '../../db/index';
-import { staffAttendance } from '../../db/schema/hr';
+import { staffAttendance } from '../../db/schema/staff';
 import { branches } from '../../db/schema/branches';
 
 export class AttendanceService {

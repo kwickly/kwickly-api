@@ -25,10 +25,15 @@ This phase established the bedrock of the API, ensuring it is secure, fast, and 
 *   [x] **Observability:**
     *   Structured JSON Logging via `pino` (`logger.ts`).
     *   Global `auditPlugin` (`audit.ts`) automatically tracking all mutating requests (POST/PUT/PATCH/DELETE) into the `audit_logs` table.
+*   [x] **Production Security Hardening:**
+    *   Global `onError` handling for standardized, sanitized JSON responses.
+    *   Rate Limiting (`elysia-rate-limit`) to prevent abuse and brute-force attacks.
+    *   Basic HTTP Security Headers (X-Frame-Options, X-XSS-Protection, Strict-Transport-Security).
+    *   Graceful shutdowns trapping `SIGINT`/`SIGTERM` to safely terminate active DB transactions.
 
 ---
 
-## 🚧 Phase 2: Core Business Logic (PARTIAL)
+## ✅ Phase 2: Core Business Logic (COMPLETED)
 
 This phase focused on the primary RESTful endpoints required for the Web Dashboard and Customer App to function.
 
@@ -41,20 +46,20 @@ This phase focused on the primary RESTful endpoints required for the Web Dashboa
     *   `POST /api/v1/menus/items`: Add items/categories.
 *   [x] **Subscriptions & QR Attendance APIs (COMPLETED):**
     *   REST endpoints for buying plans and scanning QR codes. (Schemas are done).
-*   [ ] **Combos & Payments APIs (PENDING):**
+*   [x] **Combos & Payments APIs (COMPLETED):**
     *   REST endpoints for combo creation and webhook handlers. (Schemas are done).
 
 ---
 
-## 🚧 Phase 3: Enterprise Schema Expansion (PARTIAL)
+## ✅ Phase 3: Enterprise Schema Expansion (COMPLETED)
 
 This phase upgraded the database architecture to support massive scaling and comprehensive Restaurant Operations, including HR, Inventory, CRM, and Promotions.
 
 *   [x] **Database Schemas Migrated:** Drizzle schemas for CRM, HR, Inventory, and Promotions are fully built and indexed.
-*   [ ] **Promotions Module APIs (PENDING):** Predefined staff discounts and customer-entered coupons (`promotions.ts`).
-*   [ ] **CRM Module APIs (PENDING):** Customer marketing profiles and dual-entry loyalty points ledger (`crm.ts`).
-*   [ ] **Inventory Module APIs (PENDING):** Raw materials, recipes, and per-branch stock ledgers (`inventory.ts`).
-*   [ ] **HR & Payroll Module APIs (PENDING):** Staff profiles, automated salary calculations, digital IDs, and payslips (`hr.ts`).
+*   [x] **Promotions Module APIs (COMPLETED):** Predefined staff discounts and customer-entered coupons (`promotions.ts`).
+*   [x] **CRM Module APIs (COMPLETED):** Customer marketing profiles and dual-entry loyalty points ledger (`crm.ts`).
+*   [x] **Inventory Module APIs (COMPLETED):** Raw materials, recipes, and per-branch stock ledgers (`inventory.ts`).
+*   [x] **Staff & Payroll Module APIs (COMPLETED):** Staff profiles, automated salary calculations, digital IDs, and payslips (`staff.ts`, `payroll.ts`).
 
 ---
 
