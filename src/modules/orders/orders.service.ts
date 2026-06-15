@@ -4,6 +4,7 @@ import { orders, orderItems } from '../../shared/schema/orders.ts';
 import { kots } from '../../shared/schema/kots.ts';
 import { menuItems } from '../../shared/schema/menus.ts';
 import { eventBus, EVENTS } from '../../shared/events.ts';
+import { sql } from 'drizzle-orm';
 
 export type OrderItemPayload = {
   menuItemId: string;
@@ -121,5 +122,41 @@ export class OrdersService {
     });
 
     return result;
+  }
+
+  /**
+   * Retrieves order history for a tenant/branch.
+   * By default, fetches up to the last 6 months to act as the MVP standard.
+   */
+  async getOrderHistory(tenantId: string, branchId: string, limit: number = 50, offset: number = 0) {
+    const history = await db.execute(sql`
+      SELECT 
+        o.id,
+        o.type,
+        o.status,
+        o.subtotal,
+        o.discount_amount,
+        o.total,
+        o.created_at,
+        json_agg(
+          json_build_object(
+            'name', oi.name,
+            'quantity', oi.quantity,
+            'total', oi.total
+          )
+        ) as items
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE 
+        o.tenant_id = ${tenantId}
+        AND o.branch_id = ${branchId}
+        AND o.created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+    const rows = (history as any).rows || history;
+    return rows;
   }
 }

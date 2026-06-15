@@ -43,4 +43,32 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
         ),
       }),
     }
+  )
+
+  /**
+   * GET /v1/orders
+   * Retrieves order history for the past 6 months (MVP standard).
+   */
+  .get(
+    '/',
+    async ({ query, user }) => {
+      const data = await ordersService.getOrderHistory(
+        user!.tenantId!,
+        query.branchId,
+        query.limit ? parseInt(query.limit, 10) : 50,
+        query.offset ? parseInt(query.offset, 10) : 0
+      );
+
+      return {
+        success: true,
+        data,
+      };
+    },
+    {
+      query: t.Object({
+        branchId: t.String(),
+        limit: t.Optional(t.String()),
+        offset: t.Optional(t.String()),
+      }),
+    }
   );
