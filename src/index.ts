@@ -17,6 +17,9 @@ import { kotsController } from './modules/kots/kots.controller.ts';
 import { websocketPlugin } from './shared/websocket.ts';
 import { eventBus, EVENTS } from './shared/events.ts';
 
+import { analyticsController } from './modules/analytics/analytics.controller.ts';
+import { hardwareController } from './modules/hardware/hardware.controller.ts';
+
 const app = new Elysia()
   .use(cors())
   .use(loggerPlugin)
@@ -47,6 +50,10 @@ const app = new Elysia()
   .use(ordersController)
   .use(kotsController)
   .use(websocketPlugin)
+
+  // Register Phase 5 Modules
+  .use(analyticsController)
+  .use(hardwareController)
 
   .listen(process.env.PORT ?? 3000);
 
