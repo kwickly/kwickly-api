@@ -1,6 +1,6 @@
 import {
   uuid,
-  pgTable, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+  pgTable, text, timestamp, pgEnum, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { orders } from './orders';
 import { branches } from './branches';
@@ -24,7 +24,9 @@ export const kots = pgTable('kots', {
   completedAt: timestamp('completed_at'),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  idxBranchCreated: index('idx_kots_branch_created').on(table.branchId, table.createdAt),
+}));
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 export const kotsRelations = relations(kots, ({ one }) => ({

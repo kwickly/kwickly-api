@@ -125,10 +125,26 @@ export class OrdersService {
   }
 
   /**
-   * Retrieves order history for a tenant/branch.
-   * By default, fetches up to the last 6 months to act as the MVP standard.
+   * Retrieves order history using Cursor-based Pagination.
+   * Utilizes the composite index (tenant_id, branch_id, created_at).
    */
-  async getOrderHistory(tenantId: string, branchId: string, limit: number = 50, offset: number = 0) {
+  async getOrderHistory(tenantId: string, branchId: string, limit: number = 20, cursor?: string) {
+    let cursorDate: Date | null = null;
+    
+    // Decode base64 cursor back to a Date
+    if (cursor) {
+      try {
+        const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+        cursorDate = new Date(decoded);
+      } catch (e) {
+        // Invalid cursor, ignore it
+      }
+    }
+
+    // We fetch limit + 1 to determine if there is a 'next page'
+    const fetchLimit = limit + 1;
+
+    // Use raw SQL with optional cursor
     const history = await db.execute(sql`
       SELECT 
         o.id,
@@ -137,7 +153,7 @@ export class OrdersService {
         o.subtotal,
         o.discount_amount,
         o.total,
-        o.created_at,
+        o.created_at as "createdAt",
         json_agg(
           json_build_object(
             'name', oi.name,
@@ -150,10 +166,10 @@ export class OrdersService {
       WHERE 
         o.tenant_id = ${tenantId}
         AND o.branch_id = ${branchId}
-        AND o.created_at >= NOW() - INTERVAL '6 months'
+        ${cursorDate ? sql`AND o.created_at < ${cursorDate}` : sql``}
       GROUP BY o.id
       ORDER BY o.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
+      LIMIT ${fetchLimit}
     `);
 
     const rows = (history as any).rows || history;

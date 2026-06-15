@@ -6,6 +6,7 @@ import {
   numeric,
   timestamp,
   pgEnum,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
@@ -47,7 +48,9 @@ export const orders = pgTable('orders', {
   tableNumber:    text('table_number'),
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  idxTenantBranchCreated: index('idx_orders_tenant_branch_created').on(table.tenantId, table.branchId, table.createdAt),
+}));
 
 // ─── Order Items ─────────────────────────────────────────────────────────────
 export const orderItems = pgTable('order_items', {

@@ -8,6 +8,13 @@
       "when": 1781563148965,
       "tag": "0000_sleepy_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781564287743,
+      "tag": "0001_dazzling_gunslinger",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { OrdersService } from './orders.service.ts';
 import { authPlugin } from '../auth/auth.guard.ts';
+import { sanitizeLimit, buildCursorMeta } from '../../shared/pagination.ts';
 
 const ordersService = new OrdersService();
 
@@ -47,28 +48,33 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
 
   /**
    * GET /v1/orders
-   * Retrieves order history for the past 6 months (MVP standard).
+   * Retrieves order history utilizing high-performance cursor pagination.
    */
   .get(
     '/',
     async ({ query, user }) => {
-      const data = await ordersService.getOrderHistory(
+      const safeLimit = sanitizeLimit(query.limit);
+
+      const items = await ordersService.getOrderHistory(
         user!.tenantId!,
         query.branchId,
-        query.limit ? parseInt(query.limit, 10) : 50,
-        query.offset ? parseInt(query.offset, 10) : 0
+        safeLimit,
+        query.cursor
       );
+
+      const result = buildCursorMeta(items, safeLimit, 'createdAt');
 
       return {
         success: true,
-        data,
+        data: result.data,
+        meta: result.meta,
       };
     },
     {
       query: t.Object({
         branchId: t.String(),
         limit: t.Optional(t.String()),
-        offset: t.Optional(t.String()),
+        cursor: t.Optional(t.String()),
       }),
     }
   );
