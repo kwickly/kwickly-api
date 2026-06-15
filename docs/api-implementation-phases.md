@@ -39,7 +39,7 @@ This phase focused on the primary RESTful endpoints required for the Web Dashboa
 *   [x] **Menu Management:**
     *   `GET /api/v1/menus/:branchId`: Fetch full menu (Aggressively cached via Redis).
     *   `POST /api/v1/menus/items`: Add items/categories.
-*   [ ] **Subscriptions & QR Attendance APIs (PENDING):**
+*   [x] **Subscriptions & QR Attendance APIs (COMPLETED):**
     *   REST endpoints for buying plans and scanning QR codes. (Schemas are done).
 *   [ ] **Combos & Payments APIs (PENDING):**
     *   REST endpoints for combo creation and webhook handlers. (Schemas are done).
