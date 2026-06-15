@@ -8,6 +8,10 @@ import { requireRoles } from './modules/auth/rbac.guard';
 import { authController } from './modules/auth/auth.controller';
 import { auditPlugin } from './shared/audit';
 
+import { branchesController } from './modules/branches/branches.controller';
+import { menusController } from './modules/menus/menus.controller';
+import { usersController } from './modules/users/users.controller';
+
 const app = new Elysia()
   .use(cors())
   .use(loggerPlugin)
@@ -26,25 +30,13 @@ const app = new Elysia()
     return { status: 'ok', ts: new Date().toISOString() };
   })
   
-  // Register Auth Module
+  // Register Phase 1 Modules
   .use(authController)
 
-  // Example of a completely public route
-  .get('/public', () => ({ message: 'Anyone can see this' }))
-
-  // Example of a route requiring ANY authenticated user
-  .use(requireAuth)
-  .get('/me', ({ user }) => ({ 
-    message: 'You are authenticated!',
-    user 
-  }))
-
-  // Example of a route requiring specifically a manager or higher
-  .use(requireRoles(['manager', 'tenant_owner']))
-  .post('/refund', ({ user, log }) => {
-    log.info({ managerId: user.sub }, 'Refund initiated');
-    return { status: 'refund_successful', by: user.role };
-  })
+  // Register Phase 2 Modules
+  .use(branchesController)
+  .use(menusController)
+  .use(usersController)
 
   .listen(process.env.PORT ?? 3000);
 

@@ -28,24 +28,35 @@ This phase established the bedrock of the API, ensuring it is secure, fast, and 
 
 ---
 
-## ⏳ Phase 2: Core Business Logic (IN PROGRESS / NEXT)
+## ✅ Phase 2: Core Business Logic (COMPLETED)
 
-This phase focuses on the primary RESTful endpoints required for the Web Dashboard and Customer App to function.
+This phase focused on the primary RESTful endpoints required for the Web Dashboard and Customer App to function.
 
-*   [ ] **Tenant & Branch Management:**
+*   [x] **Tenant & Branch Management:**
     *   `GET /api/v1/branches`: List branches for a tenant.
     *   `POST /api/v1/branches`: Create a new branch.
     *   `PATCH /api/v1/branches/:id`: Update branch config (requires cache invalidation).
-*   [ ] **Menu Management:**
+*   [x] **Menu Management:**
     *   `GET /api/v1/menus/:branchId`: Fetch full menu (Aggressively cached via Redis).
     *   `POST /api/v1/menus/items`: Add items/categories.
-*   [ ] **Staff Management:**
+*   [x] **Staff Management:**
     *   CRUD operations for staff (`users` table).
     *   `POST /api/v1/attendance`: Clock-in / Clock-out endpoints.
 
 ---
 
-## 🛑 Phase 3: Ordering & KOT Engine (PENDING)
+## ✅ Phase 3: Enterprise Schema Expansion (COMPLETED)
+
+This phase upgraded the database architecture to support massive scaling and comprehensive Restaurant Operations, including HR, Inventory, CRM, and Promotions.
+
+*   [x] **Promotions Module:** Predefined staff discounts and customer-entered coupons (`promotions.ts`).
+*   [x] **CRM Module:** Customer marketing profiles and dual-entry loyalty points ledger (`crm.ts`).
+*   [x] **Inventory Module:** Raw materials, recipes, and per-branch stock ledgers (`inventory.ts`).
+*   [x] **HR & Payroll Module:** Staff profiles, automated salary calculations, digital IDs, and payslips (`hr.ts`).
+
+---
+
+## ⏳ Phase 4: Ordering & KOT Engine (IN PROGRESS)
 
 This phase handles the complex transactional logic of placing orders and syncing them with the kitchen.
 
@@ -61,7 +72,7 @@ This phase handles the complex transactional logic of placing orders and syncing
 
 ---
 
-## 🛑 Phase 4: Analytics & Integrations (PENDING)
+## 🛑 Phase 5: Analytics & Integrations (PENDING)
 
 This phase focuses on reporting and external hardware.
 

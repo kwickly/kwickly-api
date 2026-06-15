@@ -7,8 +7,8 @@ import {
   pgEnum,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { branches } from './branches';
-import { users } from './users';
+import { branches } from './branches.ts';
+import { users } from './users.ts';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const tenantPlanEnum = pgEnum('tenant_plan', [
