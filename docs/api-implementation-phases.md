@@ -28,7 +28,7 @@ This phase established the bedrock of the API, ensuring it is secure, fast, and 
 
 ---
 
-## ✅ Phase 2: Core Business Logic (COMPLETED)
+## 🚧 Phase 2: Core Business Logic (PARTIAL)
 
 This phase focused on the primary RESTful endpoints required for the Web Dashboard and Customer App to function.
 
@@ -39,20 +39,22 @@ This phase focused on the primary RESTful endpoints required for the Web Dashboa
 *   [x] **Menu Management:**
     *   `GET /api/v1/menus/:branchId`: Fetch full menu (Aggressively cached via Redis).
     *   `POST /api/v1/menus/items`: Add items/categories.
-*   [x] **Staff Management:**
-    *   CRUD operations for staff (`users` table).
-    *   `POST /api/v1/attendance`: Clock-in / Clock-out endpoints.
+*   [ ] **Subscriptions & QR Attendance APIs (PENDING):**
+    *   REST endpoints for buying plans and scanning QR codes. (Schemas are done).
+*   [ ] **Combos & Payments APIs (PENDING):**
+    *   REST endpoints for combo creation and webhook handlers. (Schemas are done).
 
 ---
 
-## ✅ Phase 3: Enterprise Schema Expansion (COMPLETED)
+## 🚧 Phase 3: Enterprise Schema Expansion (PARTIAL)
 
 This phase upgraded the database architecture to support massive scaling and comprehensive Restaurant Operations, including HR, Inventory, CRM, and Promotions.
 
-*   [x] **Promotions Module:** Predefined staff discounts and customer-entered coupons (`promotions.ts`).
-*   [x] **CRM Module:** Customer marketing profiles and dual-entry loyalty points ledger (`crm.ts`).
-*   [x] **Inventory Module:** Raw materials, recipes, and per-branch stock ledgers (`inventory.ts`).
-*   [x] **HR & Payroll Module:** Staff profiles, automated salary calculations, digital IDs, and payslips (`hr.ts`).
+*   [x] **Database Schemas Migrated:** Drizzle schemas for CRM, HR, Inventory, and Promotions are fully built and indexed.
+*   [ ] **Promotions Module APIs (PENDING):** Predefined staff discounts and customer-entered coupons (`promotions.ts`).
+*   [ ] **CRM Module APIs (PENDING):** Customer marketing profiles and dual-entry loyalty points ledger (`crm.ts`).
+*   [ ] **Inventory Module APIs (PENDING):** Raw materials, recipes, and per-branch stock ledgers (`inventory.ts`).
+*   [ ] **HR & Payroll Module APIs (PENDING):** Staff profiles, automated salary calculations, digital IDs, and payslips (`hr.ts`).
 
 ---
 
@@ -72,13 +74,13 @@ This phase handles the complex transactional logic of placing orders and syncing
 
 ---
 
-## ⏳ Phase 5: Analytics & Integrations (IN PROGRESS)
+## ✅ Phase 5: Analytics & Integrations (COMPLETED)
 
 This phase adds advanced capabilities like reporting dashboards, background jobs, and hardware integrations.
 
-*   [ ] **Analytics Dashboards:**
+*   [x] **Analytics Dashboards:**
     *   Use raw `Bun.sql` or Drizzle raw queries for high-performance aggregations (e.g., daily sales, top items).
-*   [ ] **Hardware Integration:**
+*   [x] **Hardware Integration:**
     *   Endpoints for Thermal Printer (ESC/POS) integration.
-*   [ ] **Background Jobs:**
-    *   Set up Trigger.dev for cron jobs (End-of-day reports, inventory low-stock alerts).e pruning, and automated report emails.
+*   [x] **Background Jobs:**
+    *   Set up Trigger.dev for cron jobs (End-of-day reports, inventory low-stock alerts, etc).
