@@ -1,0 +1,36 @@
+import {
+  uuid,
+  pgTable,
+  text,
+  boolean,
+  timestamp,
+  real,
+  jsonb,
+} from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { tenants } from './tenants';
+
+// ─── Table ──────────────────────────────────────────────────────────────────
+export const branches = pgTable('branches', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId:     uuid('tenant_id').notNull().references(() => tenants.id),
+  name:         text('name').notNull(),
+  address:      text('address'),
+  phone:        text('phone'),
+  latitude:     real('latitude'),
+  longitude:    real('longitude'),
+  openingHours: jsonb('opening_hours'), // { mon: { open: "09:00", close: "22:00" }, ... }
+  isActive:     boolean('is_active').default(true).notNull(),
+  managerId:    uuid('manager_id'), // FK to users — set after users table exists
+  createdAt:    timestamp('created_at').defaultNow().notNull(),
+  updatedAt:    timestamp('updated_at').defaultNow().notNull(),
+  deletedAt:    timestamp('deleted_at'),
+});
+
+// ─── Relations ──────────────────────────────────────────────────────────────
+export const branchesRelations = relations(branches, ({ one }) => ({
+  tenant: one(tenants, { fields: [branches.tenantId], references: [tenants.id] }),
+}));
+
+export type Branch    = typeof branches.$inferSelect;
+export type NewBranch = typeof branches.$inferInsert;
