@@ -1,0 +1,57 @@
+import { Elysia, t } from 'elysia';
+import { SubscriptionsService } from './subscriptions.service';
+import { requireAuth } from '../auth/auth.guard';
+import { requireRoles } from '../auth/rbac.guard';
+
+const subscriptionsService = new SubscriptionsService();
+
+export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' })
+  .use(requireAuth)
+  
+  // Get available plans (Any authenticated user can see plans for a branch)
+  .get('/plans', async ({ user, query }) => {
+    if (!user || !user.tenantId) throw new Error('Unauthorized');
+    const plans = await subscriptionsService.getPlans(user.tenantId, query.branchId);
+    return { success: true, data: plans };
+  }, {
+    query: t.Object({
+      branchId: t.Optional(t.String()),
+    })
+  })
+
+  // Customer purchases a plan
+  .post('/purchase', async ({ user, body }) => {
+    if (!user || !user.tenantId) throw new Error('Unauthorized');
+    // In a real flow, this creates a pending invoice and returns a Razorpay order ID.
+    // We are mocking instant fulfillment for now.
+    const sub = await subscriptionsService.purchasePlan(user.tenantId, user.sub, body.planId);
+    return { success: true, data: sub };
+  }, {
+    body: t.Object({
+      planId: t.String(),
+    })
+  })
+
+  // Customer gets their dynamic, anti-fraud QR Code
+  .get('/my-qr', async ({ user }) => {
+    if (!user || !user.tenantId) throw new Error('Unauthorized');
+    const qrBase64 = await subscriptionsService.generateQR(user.tenantId, user.sub);
+    return { success: true, qr: qrBase64 };
+  })
+
+  // Only staff roles can scan QR codes from here down
+  .use(requireRoles(['super_admin', 'tenant_owner', 'manager', 'cashier', 'qr_scanner']))
+
+  // Staff scans a customer's QR Code
+  .post('/staff/deduct-meal', async ({ user, body }) => {
+    if (!user || !user.tenantId || !user.branchId) {
+      throw new Error('Staff user must be assigned to a branch to scan QR codes.');
+    }
+    
+    const result = await subscriptionsService.scanQR(user.tenantId, user.branchId, user.sub, body.qrData);
+    return result;
+  }, {
+    body: t.Object({
+      qrData: t.String(),
+    })
+  });

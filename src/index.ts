@@ -20,6 +20,9 @@ import { eventBus, EVENTS } from './shared/events.ts';
 import { analyticsController } from './modules/analytics/analytics.controller.ts';
 import { hardwareController } from './modules/hardware/hardware.controller.ts';
 
+import { subscriptionsController } from './modules/subscriptions/subscriptions.controller.ts';
+import { attendanceController } from './modules/attendance/attendance.controller.ts';
+
 const app = new Elysia()
   .use(cors())
   .use(loggerPlugin)
@@ -45,6 +48,8 @@ const app = new Elysia()
   .use(branchesController)
   .use(menusController)
   .use(usersController)
+  .use(subscriptionsController)
+  .use(attendanceController)
 
   // Register Phase 4 Modules
   .use(ordersController)
