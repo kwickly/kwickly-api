@@ -1,7 +1,7 @@
 import { eq, and, isNull } from 'drizzle-orm';
-import { db } from '../../shared/db';
-import type { NewMenuCategory, NewMenuItem } from '../../shared/schema/menus';
-import { menuCategories, menuItems } from '../../shared/schema/menus';
+import { db } from '../../db';
+import type { NewMenuCategory, NewMenuItem } from '../../db/schema/menus';
+import { menuCategories, menuItems } from '../../db/schema/menus';
 import { withCache, redis } from '../../shared/redis';
 
 /**

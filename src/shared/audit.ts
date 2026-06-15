@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
-import { db } from './db';
-import { auditLogs } from './schema/auditLogs';
+import { db } from '../db';
+import { auditLogs } from '../db/schema/auditLogs';
 
 /**
  * Global Audit Middleware

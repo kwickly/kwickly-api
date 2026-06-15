@@ -1,6 +1,6 @@
 import { eq, and, gt, desc } from 'drizzle-orm';
-import { db } from '../../shared/db';
-import { users, otpCodes, sessions, userRoleEnum } from '../../shared/schema';
+import { db } from '../../db';
+import { users, otpCodes, sessions, userRoleEnum } from '../../db/schema';
 
 export class AuthService {
   /**

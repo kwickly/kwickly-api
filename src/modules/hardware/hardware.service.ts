@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from '../../shared/db.ts';
-import { orders, orderItems } from '../../shared/schema/orders.ts';
+import { db } from '../../db/index.ts';
+import { orders, orderItems } from '../../db/schema/orders.ts';
 
 export class HardwareService {
   /**

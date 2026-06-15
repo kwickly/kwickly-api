@@ -1,7 +1,7 @@
 import { eq, and, isNull } from 'drizzle-orm';
-import { db } from '../../shared/db';
-import type { NewBranch } from '../../shared/schema/branches';
-import { branches } from '../../shared/schema/branches';
+import { db } from '../../db';
+import type { NewBranch } from '../../db/schema/branches';
+import { branches } from '../../db/schema/branches';
 import { redis } from '../../shared/redis';
 
 /**

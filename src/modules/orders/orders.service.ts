@@ -1,8 +1,8 @@
 import { eq, inArray, and } from 'drizzle-orm';
-import { db } from '../../shared/db.ts';
-import { orders, orderItems } from '../../shared/schema/orders.ts';
-import { kots } from '../../shared/schema/kots.ts';
-import { menuItems } from '../../shared/schema/menus.ts';
+import { db } from '../../db/index.ts';
+import { orders, orderItems } from '../../db/schema/orders.ts';
+import { kots } from '../../db/schema/kots.ts';
+import { menuItems } from '../../db/schema/menus.ts';
 import { eventBus, EVENTS } from '../../shared/events.ts';
 import { sql } from 'drizzle-orm';
 

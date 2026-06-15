@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from '../../shared/db.ts';
+import { db } from '../../db/index.ts';
 
 export class AnalyticsService {
   /**

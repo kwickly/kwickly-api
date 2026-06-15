@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { db } from '../../shared/db.ts';
-import { kots } from '../../shared/schema/kots.ts';
+import { db } from '../../db/index.ts';
+import { kots } from '../../db/schema/kots.ts';
 import { eventBus, EVENTS } from '../../shared/events.ts';
 
 /**

@@ -1,7 +1,7 @@
 import { eq, and, isNull, inArray } from 'drizzle-orm';
-import { db } from '../../shared/db';
-import type { NewUser } from '../../shared/schema/users';
-import { users } from '../../shared/schema/users';
+import { db } from '../../db';
+import type { NewUser } from '../../db/schema/users';
+import { users } from '../../db/schema/users';
 
 /**
  * Service handling all core business logic for Users/Staff.
