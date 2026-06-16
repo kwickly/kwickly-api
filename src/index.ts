@@ -85,30 +85,34 @@ const app = new Elysia()
     return { status: 'ok', ts: new Date().toISOString() };
   })
   
-  // Register Phase 1 Modules
-  .use(authController)
+  .group('/api', (app) => 
+    app
+      // Register Phase 1 Modules
+      .use(authController)
 
-  // Register Phase 2 Modules
-  .use(branchesController)
-  .use(menusController)
-  .use(usersController)
-  .use(subscriptionsController)
-  .use(attendanceController)
+      // Register Phase 2 Modules
+      .use(branchesController)
+      .use(menusController)
+      .use(usersController)
+      .use(subscriptionsController)
+      .use(attendanceController)
 
-  // Register Phase 4 & 5 Modules
-  .use(ordersController)
-  .use(kotsController)
-  .use(analyticsController)
-  .use(hardwareController)
+      // Register Phase 4 & 5 Modules
+      .use(ordersController)
+      .use(kotsController)
+      .use(analyticsController)
+      .use(hardwareController)
 
-  // Register Final Phase Modules
-  .use(combosController)
-  .use(promotionsController)
-  .use(paymentsController)
-  .use(crmController)
-  .use(inventoryController)
-  .use(staffController)
-  .use(payrollController)
+      // Register Final Phase Modules
+      .use(combosController)
+      .use(promotionsController)
+      .use(paymentsController)
+      .use(crmController)
+      .use(inventoryController)
+      .use(staffController)
+      .use(payrollController)
+  )
+  
   .use(websocketPlugin)
 
   .listen(process.env.PORT ?? 3000);

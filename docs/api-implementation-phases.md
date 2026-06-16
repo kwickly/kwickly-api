@@ -14,9 +14,10 @@ This phase established the bedrock of the API, ensuring it is secure, fast, and 
 *   [x] **Database Connectivity:** Configured `src/shared/db.ts` to seamlessly support both local Docker (PostgreSQL TCP) and production Neon Serverless (HTTP).
 *   [x] **Drizzle Schemas:** Defined all core tables using strict native UUIDs and Soft Deletes (`deletedAt`).
     *   *Tables:* `tenants`, `users`, `branches`, `menus`, `orders`, `kots`, `payments`, `sessions`, `auditLogs`.
+    *   *Integrity:* Enforced composite primary keys (`role_permissions`) and unique indexes (`menu_categories`, `menu_items`) to prevent duplicate records.
 *   [x] **Authentication Core:**
-    *   `auth.service.ts`: OTP generation and verification logic.
-    *   `auth.controller.ts`: API endpoints for `/send-otp`, `/verify-otp`, and `/refresh`.
+    *   `auth.service.ts`: OTP generation and verification logic + Password-based login for staff.
+    *   `auth.controller.ts`: API endpoints for `/v1/auth/login`, `/v1/auth/send-otp`, `/v1/auth/verify-otp`, and `/v1/auth/refresh`.
     *   Implemented stateless JWTs (15 min) + Stateful Refresh Tokens (30 days).
 *   [x] **Route Protection (Guards):**
     *   `auth.guard.ts`: Intercepts and validates JWTs (via headers or HttpOnly cookies) using Elysia `.derive()`.
@@ -89,3 +90,21 @@ This phase adds advanced capabilities like reporting dashboards, background jobs
     *   Endpoints for Thermal Printer (ESC/POS) integration.
 *   [x] **Background Jobs:**
     *   Set up Trigger.dev for cron jobs (End-of-day reports, inventory low-stock alerts, etc).
+
+---
+
+## 🚧 Phase 6: Infrastructure & Launch Readiness (PENDING)
+
+This phase ensures the backend is fully decoupled from local development constraints and ready for edge deployment and team collaboration.
+
+*   [ ] **Cloud Storage Integration (Media & Files):**
+    *   Implement an S3/Cloudflare R2 storage module for handling multipart form uploads.
+    *   Endpoints for uploading Menu Item Images, Branch Logos, and Staff Avatars.
+*   [ ] **Deployment Containerization (Docker):**
+    *   Create an optimized, multi-stage `Dockerfile` built for the `oven/bun` runtime.
+    *   Configure `docker-compose.yml` for local orchestration if necessary.
+*   [ ] **Automated CI/CD Pipelines:**
+    *   Set up GitHub Actions (`.github/workflows/ci.yml`) to automatically run `bun install` and type-checking on every Pull Request.
+*   [ ] **Automated Testing Suite:**
+    *   Implement `bun:test` framework.
+    *   Write End-to-End (E2E) tests for critical flows (e.g., OTP Verification, Order Placement).

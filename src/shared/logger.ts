@@ -46,5 +46,6 @@ export const loggerPlugin = (app: any) =>
     const url = new URL(request.url);
     log.info({ method: request.method, path: url.pathname }, 'Incoming Request');
   }).onError(({ log, error, code }: any) => {
-    log.error({ err: error, code }, 'Request Error');
+    const errorLogger = log || logger;
+    errorLogger.error({ err: error, code }, 'Request Error');
   });

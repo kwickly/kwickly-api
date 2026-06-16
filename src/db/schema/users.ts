@@ -28,6 +28,7 @@ export const users = pgTable('users', {
   name:        text('name').notNull(),
   phone:       text('phone').unique(),
   email:       text('email').unique(),
+  password:    text('password'), // Hashed password for staff login
   role:        userRoleEnum('role').notNull().default('customer'),
   avatarUrl:   text('avatar_url'),
   isActive:    boolean('is_active').default(true).notNull(),

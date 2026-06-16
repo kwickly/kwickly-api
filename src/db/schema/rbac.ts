@@ -3,6 +3,7 @@ import {
   pgTable,
   text,
   timestamp,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -29,7 +30,9 @@ export const permissions = pgTable('permissions', {
 export const rolePermissions = pgTable('role_permissions', {
   roleId:       uuid('role_id').notNull().references(() => roles.id),
   permissionId: uuid('permission_id').notNull().references(() => permissions.id),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
+}));
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 export const rolesRelations = relations(roles, ({ many }) => ({

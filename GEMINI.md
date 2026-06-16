@@ -29,4 +29,8 @@ Failure to follow these rules will compromise the system's data integrity.
   - `bun run dev` (Starts Elysia server)
   - `bun run db:push` (Pushes local schema changes directly to DB - **Dev Only**)
   - `bun run db:generate` (Generates safe SQL migration files for Production)
+  - `bun run db:migrate` (Applies generated migrations to the database)
+  - `bun run db:local:migrate` (Applies migrations to local PostgreSQL)
+  - `bun run db:prod:migrate` (Applies migrations to production NeonDB)
+  - `bun run db:seed` (Populates the database with initial seed data)
   - `bunx tsc --noEmit` (Strict type checking)

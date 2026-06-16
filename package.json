@@ -9,7 +9,11 @@
     "start": "bun run dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "bun run src/db/seed.ts",
+    "db:migrate": "drizzle-kit migrate",
+    "db:local:migrate": "DB_TARGET=local bun run db:migrate",
+    "db:prod:migrate": "DB_TARGET=prod bun run db:migrate"
   },
   "devDependencies": {
     "@types/bun": "latest",

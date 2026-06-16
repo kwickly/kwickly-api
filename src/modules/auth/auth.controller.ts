@@ -5,7 +5,7 @@ import { loggerPlugin } from '../../shared/logger';
 
 const authService = new AuthService();
 
-export const authController = new Elysia({ prefix: '/auth' })
+export const authController = new Elysia({ prefix: '/v1/auth' })
   .use(loggerPlugin)
   .use(authPlugin)
   
@@ -16,6 +16,50 @@ export const authController = new Elysia({ prefix: '/auth' })
     return { success: true, message: 'OTP sent successfully (Check server logs in dev mode)' };
   }, {
     body: t.Object({ phone: t.String() })
+  })
+
+  // 1.1 Password Login (For Staff/Admin)
+  .post('/login', async ({ body, jwt, cookie, set, headers }) => {
+    try {
+      const user = await authService.loginWithPassword(body.email, body.password);
+      const deviceInfo = headers['user-agent'] || 'Unknown Device';
+      
+      const refreshToken = await authService.createSession(user.id, deviceInfo);
+      
+      const accessToken = await jwt.sign({
+        sub: user.id,
+        role: user.role,
+        tenantId: user.tenantId,
+        branchId: user.branchId,
+      });
+
+      cookie.auth_session.set({
+        value: accessToken,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60
+      });
+
+      return {
+        success: true,
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+        }
+      };
+    } catch (e: any) {
+      set.status = 401;
+      return { success: false, error: e.message };
+    }
+  }, {
+    body: t.Object({
+      email: t.String(),
+      password: t.String()
+    })
   })
 
   // 2. Verify OTP & Login

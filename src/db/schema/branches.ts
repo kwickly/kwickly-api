@@ -6,6 +6,7 @@ import {
   timestamp,
   real,
   jsonb,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
@@ -25,7 +26,9 @@ export const branches = pgTable('branches', {
   createdAt:    timestamp('created_at').defaultNow().notNull(),
   updatedAt:    timestamp('updated_at').defaultNow().notNull(),
   deletedAt:    timestamp('deleted_at'),
-});
+}, (table) => ({
+  unqTenantBranch: uniqueIndex('unq_branch_tenant_name').on(table.tenantId, table.name),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const branchesRelations = relations(branches, ({ one }) => ({

@@ -4,6 +4,31 @@ import { users, otpCodes, sessions, userRoleEnum } from '../../db/schema';
 
 export class AuthService {
   /**
+   * Traditional password-based login for staff and admins.
+   */
+  async loginWithPassword(email: string, pass: string) {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+
+    if (!user || !user.password) {
+      throw new Error('Invalid email or password');
+    }
+
+    const isMatch = await Bun.password.verify(pass, user.password);
+    if (!isMatch) {
+      throw new Error('Invalid email or password');
+    }
+
+    if (!user.isActive) {
+      throw new Error('User account is deactivated');
+    }
+
+    // Update last login
+    await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
+    return user;
+  }
+
+  /**
    * Generates a 6-digit OTP and stores it in the database.
    */
   async sendOtp(phone: string): Promise<string> {

@@ -15,6 +15,20 @@
       "when": 1781564287743,
       "tag": "0001_dazzling_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781569917866,
+      "tag": "0002_vengeful_loki",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781570023409,
+      "tag": "0003_fluffy_hemingway",
+      "breakpoints": true
     }
   ]
 }

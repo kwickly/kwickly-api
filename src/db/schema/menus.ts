@@ -8,6 +8,7 @@ import {
   timestamp,
   time,
   pgEnum,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
@@ -31,7 +32,9 @@ export const menuCategories = pgTable('menu_categories', {
   isActive:  boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  unqTenantBranchCategory: uniqueIndex('unq_cat_tenant_branch_name').on(table.tenantId, table.branchId, table.name),
+}));
 
 // ─── Menu Items ──────────────────────────────────────────────────────────────
 export const menuItems = pgTable('menu_items', {
@@ -54,7 +57,9 @@ export const menuItems = pgTable('menu_items', {
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
   deletedAt:      timestamp('deleted_at'),
-});
+}, (table) => ({
+  unqTenantCategoryItem: uniqueIndex('unq_item_tenant_cat_name').on(table.tenantId, table.categoryId, table.name),
+}));
 
 // ─── Menu Item Variants ───────────────────────────────────────────────────────
 // e.g. Full / Half, Small / Medium / Large
