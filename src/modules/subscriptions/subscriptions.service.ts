@@ -2,6 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 import { db } from '../../db/index';
 import { subscriptionPlans, customerSubscriptions } from '../../db/schema/subscriptions';
+import type { NewSubscriptionPlan } from '../../db/schema/subscriptions';
 import { attendanceLogs } from '../../db/schema/attendance';
 
 export class SubscriptionsService {
@@ -175,5 +176,20 @@ export class SubscriptionsService {
         log,
       };
     });
+  }
+
+  /**
+   * Create a new subscription plan (Admin)
+   */
+  async createPlan(tenantId: string, data: Omit<NewSubscriptionPlan, 'tenantId'>) {
+    const [plan] = await db
+      .insert(subscriptionPlans)
+      .values({
+        ...data,
+        tenantId,
+      })
+      .returning();
+
+    return plan;
   }
 }

@@ -93,6 +93,17 @@ This phase adds advanced capabilities like reporting dashboards, background jobs
 
 ---
 
+## ✅ Phase 7: Comprehensive Creation Flows (COMPLETED)
+
+This phase finalized the creation flows across the admin dashboard and backend API, resolving route collisions, securing endpoints, and rendering full data grids on the frontend.
+
+*   [x] **Backend Security Hardening:** Restricted SaaS plan creation (`POST /v1/subscriptions/plans`) strictly to `super_admin` and `tenant_owner` roles.
+*   [x] **Consolidation:** Removed redundant users controller file to resolve route collisions on `/v1/staff`.
+*   [x] **Menus & Modifiers API Expansion:** Added `GET /v1/menus/addons` endpoint and service methods for listing modifier data grids.
+*   [x] **SaaS Subscriptions & Combo Setup**: Wired up combos creation and subscription plan creation in the frontend.
+
+---
+
 ## 🚧 Phase 6: Infrastructure & Launch Readiness (PENDING)
 
 This phase ensures the backend is fully decoupled from local development constraints and ready for edge deployment and team collaboration.

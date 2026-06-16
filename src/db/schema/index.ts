@@ -19,3 +19,5 @@ export * from './orders.ts';
 export * from './kots.ts';
 export * from './payments.ts';
 export * from './auditLogs.ts';
+export * from './ads.ts';
+export * from './notifications.ts';

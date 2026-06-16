@@ -39,19 +39,44 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
     return { success: true, qr: qrBase64 };
   })
 
-  // Only staff roles can scan QR codes from here down
-  .use(requireRoles(['super_admin', 'tenant_owner', 'manager', 'cashier', 'qr_scanner']))
-
-  // Staff scans a customer's QR Code
-  .post('/staff/deduct-meal', async ({ user, body }) => {
-    if (!user || !user.tenantId || !user.branchId) {
-      throw new Error('Staff user must be assigned to a branch to scan QR codes.');
-    }
-    
-    const result = await subscriptionsService.scanQR(user.tenantId, user.branchId, user.sub, body.qrData);
-    return result;
-  }, {
-    body: t.Object({
-      qrData: t.String(),
-    })
-  });
+  // Only staff/scanners can deduct meals
+  .group('', (app) =>
+    app
+      .use(requireRoles(['super_admin', 'tenant_owner', 'manager', 'cashier', 'qr_scanner']))
+      .post('/staff/deduct-meal', async ({ user, body }) => {
+        if (!user || !user.tenantId || !user.branchId) {
+          throw new Error('Staff user must be assigned to a branch to scan QR codes.');
+        }
+        
+        const result = await subscriptionsService.scanQR(user.tenantId, user.branchId, user.sub, body.qrData);
+        return result;
+      }, {
+        body: t.Object({
+          qrData: t.String(),
+        })
+      })
+  )
+  
+  // Create a new subscription plan (restricted to Super Admins & Tenant Owners)
+  .group('', (app) =>
+    app
+      .use(requireRoles(['super_admin', 'tenant_owner']))
+      .post('/plans', async ({ user, body }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        const plan = await subscriptionsService.createPlan(user.tenantId, body as any);
+        return { success: true, data: plan, message: 'Plan created' };
+      }, {
+        body: t.Object({
+          name: t.String(),
+          description: t.Optional(t.String()),
+          mealType: t.Union([t.Literal('lunch'), t.Literal('dinner'), t.Literal('both')]),
+          planType: t.Union([t.Literal('meal_count'), t.Literal('monthly'), t.Literal('custom')]),
+          totalMeals: t.Number(),
+          validityDays: t.Number(),
+          price: t.String(),
+          branchId: t.Optional(t.String()),
+          carryForward: t.Optional(t.Boolean()),
+          allowHoliday: t.Optional(t.Boolean()),
+        })
+      })
+  );

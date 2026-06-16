@@ -1,7 +1,7 @@
 import { eq, and, isNull } from 'drizzle-orm';
 import { db } from '../../db';
-import type { NewMenuCategory, NewMenuItem } from '../../db/schema/menus';
-import { menuCategories, menuItems } from '../../db/schema/menus';
+import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon } from '../../db/schema/menus';
+import { menuCategories, menuItems, menuItemAddons } from '../../db/schema/menus';
 import { withCache, redis } from '../../shared/redis';
 
 /**
@@ -119,5 +119,32 @@ export class MenusService {
     await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
 
     return updated;
+  }
+
+  /**
+   * Creates a new Menu Add-on (global or item-specific)
+   */
+  async createAddon(tenantId: string, data: Omit<NewMenuItemAddon, 'tenantId'>) {
+    const [addon] = await db.insert(menuItemAddons).values({
+      ...data,
+      tenantId,
+    }).returning();
+
+    return addon;
+  }
+
+  /**
+   * Fetches all active addons/modifiers for a specific tenant.
+   */
+  async getAddons(tenantId: string) {
+    return await db.select()
+      .from(menuItemAddons)
+      .where(
+        and(
+          eq(menuItemAddons.tenantId, tenantId),
+          eq(menuItemAddons.isActive, true)
+        )
+      )
+      .execute();
   }
 }

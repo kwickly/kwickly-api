@@ -11,7 +11,6 @@ import { auditPlugin } from './shared/audit';
 
 import { branchesController } from './modules/branches/branches.controller.ts';
 import { menusController } from './modules/menus/menus.controller.ts';
-import { usersController } from './modules/users/users.controller.ts';
 
 import { ordersController } from './modules/orders/orders.controller.ts';
 import { kotsController } from './modules/kots/kots.controller.ts';
@@ -31,6 +30,8 @@ import { crmController } from './modules/crm/crm.controller.ts';
 import { inventoryController } from './modules/inventory/inventory.controller.ts';
 import { staffController } from './modules/staff/staff.controller.ts';
 import { payrollController } from './modules/payroll/payroll.controller.ts';
+import { adsController } from './modules/ads/ads.controller.ts';
+import { notificationsController } from './modules/notifications/notifications.controller.ts';
 
 const app = new Elysia()
   .use(cors())
@@ -93,7 +94,6 @@ const app = new Elysia()
       // Register Phase 2 Modules
       .use(branchesController)
       .use(menusController)
-      .use(usersController)
       .use(subscriptionsController)
       .use(attendanceController)
 
@@ -111,6 +111,8 @@ const app = new Elysia()
       .use(inventoryController)
       .use(staffController)
       .use(payrollController)
+      .use(adsController)
+      .use(notificationsController)
   )
   
   .use(websocketPlugin)

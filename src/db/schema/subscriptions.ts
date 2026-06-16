@@ -81,5 +81,6 @@ export const customerSubscriptionsRelations = relations(customerSubscriptions, (
 }));
 
 export type SubscriptionPlan        = typeof subscriptionPlans.$inferSelect;
+export type NewSubscriptionPlan     = typeof subscriptionPlans.$inferInsert;
 export type CustomerSubscription    = typeof customerSubscriptions.$inferSelect;
 export type NewCustomerSubscription = typeof customerSubscriptions.$inferInsert;

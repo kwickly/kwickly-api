@@ -21,9 +21,16 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     return { success: true, data: staffProfile };
   }, {
     body: t.Object({
-      userId: t.String(),
-      joiningDate: t.String(),
-      salaryType: t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')]),
+      name: t.String(),
+      phone: t.String(),
+      role: t.Union([
+        t.Literal('manager'),
+        t.Literal('cashier'),
+        t.Literal('kitchen_staff'),
+        t.Literal('qr_scanner')
+      ]),
+      branchId: t.Optional(t.String()),
+      salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
       baseSalary: t.Optional(t.String()),
       hourlyRate: t.Optional(t.String()),
     })

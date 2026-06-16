@@ -74,4 +74,28 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
       price: t.String(),
       isActive: t.Boolean(),
     }))
+  })
+  
+  /**
+   * POST /v1/menus/addons
+   * Creates a new global or item-specific modifier/addon.
+   */
+  .post('/addons', async ({ body, user }) => {
+    const data = await menusService.createAddon(user!.tenantId!, body);
+    return { success: true, data, message: 'Addon created' };
+  }, {
+    body: t.Object({
+      name: t.String(),
+      price: t.String(),
+      menuItemId: t.Optional(t.String()),
+    })
+  })
+
+  /**
+   * GET /v1/menus/addons
+   * Fetches all addons/modifiers for a specific tenant.
+   */
+  .get('/addons', async ({ user }) => {
+    const data = await menusService.getAddons(user!.tenantId!);
+    return { success: true, data };
   });
