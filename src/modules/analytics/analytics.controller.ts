@@ -59,4 +59,29 @@ export const analyticsController = new Elysia({ prefix: '/v1/analytics' })
         limit: t.Optional(t.String()), // Query params are strings by default
       }),
     }
-  );
+  )
+
+  .get('/ai-forecast', async () => {
+    return {
+      success: true,
+      data: [
+        { date: 'Mon', actual: 120, forecast: 125 },
+        { date: 'Tue', actual: 180, forecast: 175 },
+        { date: 'Wed', actual: 140, forecast: 145 },
+        { date: 'Thu', actual: 220, forecast: 210 },
+        { date: 'Fri', actual: 310, forecast: 320 },
+        { date: 'Sat', actual: null, forecast: 430 },
+        { date: 'Sun', actual: null, forecast: 390 }
+      ]
+    };
+  })
+
+  .get('/ai-combos', async () => {
+    return {
+      success: true,
+      data: [
+        { id: 'suggested1', name: 'Burger + Fries + Cola Combo', items: ['Cheese Burger', 'French Fries', 'Coca Cola'], recommendedPrice: '249', confidence: '94%', lift: '+15% sales' },
+        { id: 'suggested2', name: 'Taco Meal Combo', items: ['Veg Quesadilla', 'Peri Peri Fries', 'Lemonade'], recommendedPrice: '199', confidence: '88%', lift: '+12% sales' }
+      ]
+    };
+  });

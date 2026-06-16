@@ -34,4 +34,43 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       baseSalary: t.Optional(t.String()),
       hourlyRate: t.Optional(t.String()),
     })
+  })
+
+  .get('/timesheets', async () => {
+    return {
+      success: true,
+      data: [
+        { id: '1', staffId: '101', staffName: 'Rahul Kumar', clockIn: '2026-06-16T09:00:00Z', clockOut: '2026-06-16T18:00:00Z', status: 'PENDING', totalHours: 9 },
+        { id: '2', staffId: '102', staffName: 'Priya Sharma', clockIn: '2026-06-16T10:00:00Z', clockOut: '2026-06-16T17:00:00Z', status: 'APPROVED', totalHours: 7 },
+        { id: '3', staffId: '103', staffName: 'John Doe', clockIn: '2026-06-16T08:30:00Z', clockOut: '2026-06-16T18:30:00Z', status: 'REJECTED', totalHours: 10 }
+      ]
+    };
+  })
+
+  .patch('/timesheets/:id', async ({ params, body }) => {
+    return {
+      success: true,
+      data: { id: params.id, status: (body as any).status },
+      message: `Timesheet record updated successfully`
+    };
+  })
+
+  .get('/roles', async () => {
+    return {
+      success: true,
+      data: [
+        { role: 'manager', permissions: ['read:orders', 'write:menus', 'manage:billing', 'view:staff'] },
+        { role: 'cashier', permissions: ['read:orders', 'view:menus'] },
+        { role: 'kitchen_staff', permissions: ['read:orders', 'update:orders'] },
+        { role: 'qr_scanner', permissions: ['scan:qr'] }
+      ]
+    };
+  })
+
+  .post('/roles', async ({ body }) => {
+    return {
+      success: true,
+      message: 'Role permissions saved successfully',
+      data: body
+    };
   });
