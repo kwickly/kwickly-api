@@ -104,6 +104,16 @@ This phase finalized the creation flows across the admin dashboard and backend A
 
 ---
 
+## ✅ Phase 8: Advanced Operational Features Mocking (COMPLETED)
+
+This phase added endpoints supporting the advanced capabilities introduced in the Web Admin dashboard.
+
+*   [x] **CRM Controller Endpoints:** Mock logic for rules-based segmentation, WhatsApp campaigns, churn prevention lists, and loyalty config (`crm.controller.ts`).
+*   [x] **Staff Operations:** Mock logic for timesheets / clock-in approvals and dynamic RBAC role builder (`staff.controller.ts`).
+*   [x] **Analytics Intelligence:** Mock logic for AI-driven meal demand forecasting (Prophet) and combo bundle recommendations (`analytics.controller.ts`).
+
+---
+
 ## 🚧 Phase 6: Infrastructure & Launch Readiness (PENDING)
 
 This phase ensures the backend is fully decoupled from local development constraints and ready for edge deployment and team collaboration.
