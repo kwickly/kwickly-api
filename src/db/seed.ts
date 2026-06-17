@@ -1,11 +1,12 @@
 import { db } from './index.ts';
 import * as schema from './schema/index.ts';
+import { faker } from '@faker-js/faker';
 
 async function main() {
-  console.log('🌱 Seeding database with upsert strategy...');
+  console.log('🌱 Starting comprehensive database seeding with Faker.js...');
 
-  // 1. Seed Tenants
-  console.log('🏢 Seeding tenants...');
+  // 1. Stable Test Data (Things we need for manual testing)
+  console.log('🏢 Seeding stable Tenants...');
   const [swamyTenant] = await db.insert(schema.tenants).values([
     {
       name: 'Swamy Restaurant',
@@ -34,8 +35,7 @@ async function main() {
 
   if (!kwicklyTenant) throw new Error('Failed to seed kwicklyTenant');
 
-  // 2. Seed Branches
-  console.log('📍 Seeding branches...');
+  console.log('📍 Seeding stable Branches...');
   const [swamyMainBranch] = await db.insert(schema.branches).values([
     {
       tenantId: swamyTenant.id,
@@ -50,23 +50,23 @@ async function main() {
 
   if (!swamyMainBranch) throw new Error('Failed to seed swamyMainBranch');
 
-  // 3. Seed Roles & Permissions
+  // 3. RBAC Seed
   console.log('🔐 Seeding RBAC...');
-  const [manageMenuPerm] = await db.insert(schema.permissions).values([
+  const permissions = [
     { name: 'Manage Menu', slug: 'menu:write', description: 'Can add/edit/delete menu items' },
-  ]).onConflictDoUpdate({
-    target: schema.permissions.slug,
-    set: { name: 'Manage Menu', description: 'Can add/edit/delete menu items' }
-  }).returning();
-
-  const [viewOrdersPerm] = await db.insert(schema.permissions).values([
     { name: 'View Orders', slug: 'orders:read', description: 'Can view order history' },
-  ]).onConflictDoUpdate({
-    target: schema.permissions.slug,
-    set: { name: 'View Orders', description: 'Can view order history' }
-  }).returning();
+    { name: 'Manage Staff', slug: 'staff:write', description: 'Can manage staff profiles' },
+    { name: 'View Analytics', slug: 'analytics:read', description: 'Can view branch analytics' },
+  ];
 
-  if (!manageMenuPerm || !viewOrdersPerm) throw new Error('Failed to seed permissions');
+  const seededPermissions = [];
+  for (const perm of permissions) {
+    const [p] = await db.insert(schema.permissions).values(perm).onConflictDoUpdate({
+      target: schema.permissions.slug,
+      set: perm
+    }).returning();
+    if (p) seededPermissions.push(p);
+  }
 
   const [managerRole] = await db.insert(schema.roles).values([
     { name: 'Branch Manager', slug: 'branch_manager' },
@@ -75,45 +75,32 @@ async function main() {
     set: { name: 'Branch Manager' }
   }).returning();
 
-  if (!managerRole) throw new Error('Failed to seed managerRole');
+  if (managerRole) {
+    await db.insert(schema.rolePermissions).values(
+      seededPermissions.map(p => ({ roleId: managerRole.id, permissionId: p.id }))
+    ).onConflictDoNothing();
+  }
 
-  await db.insert(schema.rolePermissions).values([
-    { roleId: managerRole.id, permissionId: manageMenuPerm.id },
-    { roleId: managerRole.id, permissionId: viewOrdersPerm.id },
-  ]).onConflictDoNothing();
-
-  // 4. Seed Users
-  console.log('👤 Seeding users...');
+  // 4. Stable Users
+  console.log('👤 Seeding stable users...');
   const mockPassword = await Bun.password.hash('Test@12345');
 
-  await db.insert(schema.users).values([
+  const stableUsers = [
     {
       name: 'Super Admin',
       email: 'admin@kwickly.com',
       phone: '0000000000',
       password: mockPassword,
-      role: 'super_admin',
+      role: 'super_admin' as const,
     },
-  ]).onConflictDoUpdate({
-    target: schema.users.phone,
-    set: { name: 'Super Admin', email: 'admin@kwickly.com', role: 'super_admin', password: mockPassword }
-  });
-
-  await db.insert(schema.users).values([
     {
       tenantId: swamyTenant.id,
       name: 'Swamy Owner',
       email: 'owner@swamy.com',
       phone: '1111111111',
       password: mockPassword,
-      role: 'tenant_owner',
+      role: 'tenant_owner' as const,
     },
-  ]).onConflictDoUpdate({
-    target: schema.users.phone,
-    set: { name: 'Swamy Owner', email: 'owner@swamy.com', role: 'tenant_owner', password: mockPassword }
-  });
-
-  await db.insert(schema.users).values([
     {
       tenantId: swamyTenant.id,
       branchId: swamyMainBranch.id,
@@ -121,122 +108,255 @@ async function main() {
       email: 'manager@swamy.com',
       phone: '2222222222',
       password: mockPassword,
-      role: 'manager',
-    },
-  ]).onConflictDoUpdate({
-    target: schema.users.phone,
-    set: { name: 'Vashi Manager', email: 'manager@swamy.com', role: 'manager', branchId: swamyMainBranch.id, password: mockPassword }
-  });
-
-  // 5. Seed Menus
-  console.log('🍴 Seeding menus...');
-  const [startersCategory] = await db.insert(schema.menuCategories).values([
-    {
-      tenantId: swamyTenant.id,
-      branchId: swamyMainBranch.id,
-      name: 'Starters',
-      sortOrder: 1,
-    },
-  ]).onConflictDoUpdate({
-    target: [schema.menuCategories.tenantId, schema.menuCategories.branchId, schema.menuCategories.name],
-    set: { sortOrder: 1 }
-  }).returning();
-
-  if (!startersCategory) throw new Error('Failed to seed startersCategory');
-
-  const [mainCourseCategory] = await db.insert(schema.menuCategories).values([
-    {
-      tenantId: swamyTenant.id,
-      branchId: swamyMainBranch.id,
-      name: 'Main Course',
-      sortOrder: 2,
-    },
-  ]).onConflictDoUpdate({
-    target: [schema.menuCategories.tenantId, schema.menuCategories.branchId, schema.menuCategories.name],
-    set: { sortOrder: 2 }
-  }).returning();
-
-  if (!mainCourseCategory) throw new Error('Failed to seed mainCourseCategory');
-
-  const [beveragesCategory] = await db.insert(schema.menuCategories).values([
-    {
-      tenantId: swamyTenant.id,
-      branchId: swamyMainBranch.id,
-      name: 'Beverages',
-      sortOrder: 3,
-    },
-  ]).onConflictDoUpdate({
-    target: [schema.menuCategories.tenantId, schema.menuCategories.branchId, schema.menuCategories.name],
-    set: { sortOrder: 3 }
-  }).returning();
-
-  if (!beveragesCategory) throw new Error('Failed to seed beveragesCategory');
-
-  const items = [
-    {
-      tenantId: swamyTenant.id,
-      categoryId: startersCategory.id,
-      name: 'Paneer Tikka',
-      description: 'Grilled cottage cheese with spices',
-      price: '250.00',
-      isVeg: true,
-      sortOrder: 1,
-    },
-    {
-      tenantId: swamyTenant.id,
-      categoryId: startersCategory.id,
-      name: 'Chicken Lollipop',
-      description: 'Fried chicken drumettes',
-      price: '300.00',
-      isVeg: false,
-      sortOrder: 2,
-    },
-    {
-      tenantId: swamyTenant.id,
-      categoryId: mainCourseCategory.id,
-      name: 'Dal Makhani',
-      description: 'Slow cooked black lentils',
-      price: '220.00',
-      isVeg: true,
-      sortOrder: 1,
-    },
-    {
-      tenantId: swamyTenant.id,
-      categoryId: mainCourseCategory.id,
-      name: 'Butter Chicken',
-      description: 'Creamy chicken curry',
-      price: '350.00',
-      isVeg: false,
-      sortOrder: 2,
-    },
-    {
-      tenantId: swamyTenant.id,
-      categoryId: beveragesCategory.id,
-      name: 'Masala Chai',
-      description: 'Indian spiced tea',
-      price: '40.00',
-      isVeg: true,
-      sortOrder: 1,
-    },
-    {
-      tenantId: swamyTenant.id,
-      categoryId: beveragesCategory.id,
-      name: 'Fresh Lime Soda',
-      description: 'Refreshing lime drink',
-      price: '80.00',
-      isVeg: true,
-      sortOrder: 2,
-    },
+      role: 'manager' as const,
+    }
   ];
 
-  for (const item of items) {
-    await db.insert(schema.menuItems).values(item).onConflictDoUpdate({
-      target: [schema.menuItems.tenantId, schema.menuItems.categoryId, schema.menuItems.name],
-      set: { description: item.description, price: item.price, isVeg: item.isVeg, sortOrder: item.sortOrder }
+  for (const user of stableUsers) {
+    await db.insert(schema.users).values(user).onConflictDoUpdate({
+      target: schema.users.phone,
+      set: user
     });
   }
 
-  console.log('✅ Seeding completed!');
+  // 5. Generated Mock Data
+  console.log('🎲 Generating randomized mock data...');
+
+  // Mock Tenants
+  console.log('   - More Tenants...');
+  const mockTenants = await db.insert(schema.tenants).values(
+    Array.from({ length: 5 }).map(() => ({
+      name: faker.company.name(),
+      slug: faker.lorem.slug(),
+      email: faker.internet.email(),
+      plan: faker.helpers.arrayElement(['FREE', 'STARTER', 'GROWTH', 'ENTERPRISE'] as const),
+      phone: faker.phone.number(),
+      address: faker.location.streetAddress(),
+    }))
+  ).returning();
+
+  // Mock Branches
+  console.log('   - More Branches...');
+  const mockBranches: schema.Branch[] = [];
+  for (const t of [...mockTenants, swamyTenant]) {
+    if (!t) continue;
+    const branches = await db.insert(schema.branches).values(
+      Array.from({ length: faker.number.int({ min: 1, max: 2 }) }).map(() => ({
+        tenantId: t.id,
+        name: faker.company.catchPhraseAdjective() + ' Branch',
+        address: faker.location.streetAddress(),
+        phone: faker.phone.number(),
+        latitude: faker.location.latitude(),
+        longitude: faker.location.longitude(),
+      }))
+    ).returning();
+    mockBranches.push(...branches);
+  }
+
+  // Mock Users (Staff & Customers)
+  console.log('   - Staff & Customers...');
+  const allBranches = [...mockBranches, swamyMainBranch];
+  const mockUsers = await db.insert(schema.users).values(
+    Array.from({ length: 30 }).map(() => {
+      const branch = faker.helpers.arrayElement(allBranches);
+      if (!branch) throw new Error('No branches found for mock user generation');
+      return {
+        tenantId: branch.tenantId,
+        branchId: branch.id,
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        password: mockPassword,
+        role: faker.helpers.arrayElement(['cashier', 'kitchen_staff', 'qr_scanner', 'customer'] as const),
+      };
+    })
+  ).returning();
+
+  // Mock Staff Profiles
+  console.log('   - Staff Profiles...');
+  const staffUsers = mockUsers.filter(u => u.role !== 'customer');
+  for (const user of staffUsers) {
+    const joiningDate = faker.date.past({ years: 2 }).toISOString().split('T')[0];
+    const salaryType = faker.helpers.arrayElement(['HOURLY', 'MONTHLY'] as const);
+    const baseSalary = faker.commerce.price({ min: 15000, max: 50000 });
+    const digitalIdToken = faker.string.uuid();
+
+    if (!user.tenantId || !joiningDate || !digitalIdToken) continue;
+
+    await db.insert(schema.staffProfiles).values({
+      tenantId: user.tenantId,
+      userId: user.id,
+      emergencyContact: faker.phone.number(),
+      joiningDate: joiningDate,
+      salaryType: salaryType,
+      baseSalary: baseSalary,
+      digitalIdToken: digitalIdToken,
+    }).onConflictDoNothing();
+  }
+
+  // Mock Menu Categories & Items
+  console.log('   - Menus & Categories...');
+  for (const branch of allBranches) {
+    if (!branch) continue;
+    const categoryData = ['Starters', 'Main Course', 'Desserts', 'Beverages'].map((name, index) => ({
+      tenantId: branch.tenantId,
+      branchId: branch.id,
+      name,
+      sortOrder: index,
+    }));
+
+    const categories: schema.MenuCategory[] = [];
+    for (const cat of categoryData) {
+      const [insertedCat] = await db.insert(schema.menuCategories).values(cat).onConflictDoUpdate({
+        target: [schema.menuCategories.tenantId, schema.menuCategories.branchId, schema.menuCategories.name],
+        set: { sortOrder: cat.sortOrder }
+      }).returning();
+      if (insertedCat) categories.push(insertedCat);
+    }
+
+    for (const cat of categories) {
+      const itemData = Array.from({ length: 3 }).map((_, index) => ({
+        tenantId: branch.tenantId,
+        categoryId: cat.id,
+        name: faker.commerce.productName(),
+        description: faker.commerce.productDescription(),
+        price: faker.commerce.price({ min: 100, max: 1000 }),
+        isVeg: faker.datatype.boolean(),
+        sortOrder: index,
+      }));
+
+      const items: schema.MenuItem[] = [];
+      for (const item of itemData) {
+        const [insertedItem] = await db.insert(schema.menuItems).values(item).onConflictDoUpdate({
+          target: [schema.menuItems.tenantId, schema.menuItems.categoryId, schema.menuItems.name],
+          set: { description: item.description, price: item.price, isVeg: item.isVeg }
+        }).returning();
+        if (insertedItem) items.push(insertedItem);
+      }
+
+      for (const item of items) {
+        await db.insert(schema.menuItemVariants).values([
+          { menuItemId: item.id, name: 'Half', priceDelta: '-50.00' },
+          { menuItemId: item.id, name: 'Full', priceDelta: '0.00', isDefault: true },
+        ]).onConflictDoNothing();
+
+        await db.insert(schema.menuItemAddons).values(
+          Array.from({ length: 2 }).map(() => ({
+            tenantId: branch.tenantId,
+            menuItemId: item.id,
+            name: 'Extra ' + faker.commerce.productAdjective(),
+            price: faker.commerce.price({ min: 10, max: 50 }),
+          }))
+        ).onConflictDoNothing();
+      }
+    }
+  }
+
+  // Mock Inventory
+  console.log('   - Inventory & Stock...');
+  for (const tenant of [...mockTenants, swamyTenant]) {
+    if (!tenant) continue;
+    const materials = await db.insert(schema.rawMaterials).values(
+      Array.from({ length: 5 }).map(() => ({
+        tenantId: tenant.id,
+        name: faker.commerce.productMaterial(),
+        uom: faker.helpers.arrayElement(['KG', 'GRAM', 'LITER', 'MILLILITER', 'PIECE', 'BOX'] as const),
+      }))
+    ).returning();
+
+    const tenantBranches = allBranches.filter(b => b && b.tenantId === tenant.id);
+    for (const branch of tenantBranches) {
+      if (!branch) continue;
+      for (const mat of materials) {
+        await db.insert(schema.stockLedgers).values({
+          tenantId: tenant.id,
+          branchId: branch.id,
+          rawMaterialId: mat.id,
+          quantityChange: faker.number.float({ min: 10, max: 100 }).toFixed(2),
+          reason: 'Initial Seed Stock',
+        });
+      }
+    }
+  }
+
+  // Mock Orders, KOTs & Payments
+  console.log('   - Orders, KOTs & Payments...');
+  const customers = mockUsers.filter(u => u.role === 'customer');
+  for (const branch of allBranches) {
+    if (!branch) continue;
+    const branchItems = await db.query.menuItems.findMany({
+      where: (items, { eq }) => eq(items.tenantId, branch.tenantId),
+      limit: 5
+    });
+
+    if (branchItems.length === 0) continue;
+
+    for (let i = 0; i < 10; i++) {
+      const customer = faker.helpers.arrayElement(customers);
+      const subtotal = faker.number.int({ min: 200, max: 2000 });
+      const [order] = await db.insert(schema.orders).values({
+        tenantId: branch.tenantId,
+        branchId: branch.id,
+        customerId: customer.id,
+        type: 'paid',
+        status: faker.helpers.arrayElement(['pending', 'preparing', 'ready', 'delivered'] as const),
+        subtotal: subtotal.toString(),
+        total: subtotal.toString(),
+        tableNumber: faker.number.int({ min: 1, max: 20 }).toString(),
+      }).returning();
+
+      if (!order) continue;
+
+      const randomItem = faker.helpers.arrayElement(branchItems);
+      await db.insert(schema.orderItems).values({
+        orderId: order.id,
+        menuItemId: randomItem.id,
+        name: randomItem.name,
+        quantity: faker.number.int({ min: 1, max: 3 }),
+        unitPrice: randomItem.price,
+        total: (parseFloat(randomItem.price) * 2).toString(),
+      });
+
+      await db.insert(schema.kots).values({
+        orderId: order.id,
+        branchId: branch.id,
+        status: order.status === 'delivered' ? 'completed' : 'preparing',
+      });
+
+      if (order.status === 'delivered' || faker.datatype.boolean()) {
+        await db.insert(schema.payments).values({
+          orderId: order.id,
+          method: faker.helpers.arrayElement(['cash', 'upi', 'razorpay'] as const),
+          amount: order.total,
+          status: 'paid',
+          paidAt: new Date(),
+        });
+      }
+    }
+  }
+
+  // Mock Promotions & Ads
+  console.log('   - Promotions & Ads...');
+  for (const tenant of [...mockTenants, swamyTenant]) {
+    if (!tenant) continue;
+    await db.insert(schema.coupons).values({
+      tenantId: tenant.id,
+      code: faker.string.alphanumeric(6).toUpperCase(),
+      discountType: 'PERCENTAGE',
+      discountValue: '10.00',
+      isActive: true,
+    });
+
+    await db.insert(schema.inAppAds).values({
+      tenantId: tenant.id,
+      title: 'Special Summer Offer',
+      imageUrl: 'https://placehold.co/600x400',
+      link: 'https://kwickly.com',
+      isActive: true,
+    });
+  }
+
+  console.log('✅ Seeding completed successfully!');
   process.exit(0);
 }
 

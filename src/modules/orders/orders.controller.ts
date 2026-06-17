@@ -1,12 +1,12 @@
 import { Elysia, t } from 'elysia';
 import { OrdersService } from './orders.service.ts';
-import { authPlugin } from '../auth/auth.guard.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
 import { sanitizeLimit, buildCursorMeta } from '../../shared/pagination.ts';
 
 const ordersService = new OrdersService();
 
 export const ordersController = new Elysia({ prefix: '/v1/orders' })
-  .use(authPlugin)
+  .use(requireAuth)
 
   /**
    * POST /v1/orders

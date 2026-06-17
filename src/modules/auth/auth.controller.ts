@@ -132,4 +132,10 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
     }
   }, {
     body: t.Object({ refreshToken: t.String() })
+  })
+
+  // 4. Logout
+  .post('/logout', async ({ cookie }) => {
+    cookie.auth_session.remove();
+    return { success: true, message: 'Logged out successfully' };
   });

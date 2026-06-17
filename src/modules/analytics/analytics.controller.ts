@@ -15,9 +15,20 @@ export const analyticsController = new Elysia({ prefix: '/v1/analytics' })
    */
   .get(
     '/sales',
-    async ({ query, user }) => {
+    async ({ query, user, set }) => {
+      if (!user?.tenantId) {
+        set.status = 403;
+        return { success: false, error: 'Tenant context required' };
+      }
+
+      // Check if branchId is a valid UUID, otherwise return empty stats
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      if (!uuidRegex.test(query.branchId)) {
+        return { success: true, data: { totalOrders: 0, totalSales: 0, averageOrderValue: 0 } };
+      }
+
       const data = await analyticsService.getDailySales(
-        user!.tenantId!,
+        user.tenantId,
         query.branchId,
         query.date
       );
@@ -41,9 +52,19 @@ export const analyticsController = new Elysia({ prefix: '/v1/analytics' })
    */
   .get(
     '/top-items',
-    async ({ query, user }) => {
+    async ({ query, user, set }) => {
+      if (!user?.tenantId) {
+        set.status = 403;
+        return { success: false, error: 'Tenant context required' };
+      }
+
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      if (!uuidRegex.test(query.branchId)) {
+        return { success: true, data: [] };
+      }
+
       const data = await analyticsService.getTopSellingItems(
-        user!.tenantId!,
+        user.tenantId,
         query.branchId,
         query.limit ? parseInt(query.limit, 10) : 5
       );

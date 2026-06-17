@@ -9,14 +9,20 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
   .use(requireAuth)
   .use(requireRoles(['super_admin', 'tenant_owner', 'manager']))
 
-  .get('/', async ({ user }) => {
-    if (!user || !user.tenantId) throw new Error('Unauthorized');
+  .get('/', async ({ user, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
     const staff = await staffService.getStaff(user.tenantId);
     return { success: true, data: staff };
   })
 
-  .post('/', async ({ user, body }) => {
-    if (!user || !user.tenantId) throw new Error('Unauthorized');
+  .post('/', async ({ user, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
     const staffProfile = await staffService.registerStaff(user.tenantId, body as any);
     return { success: true, data: staffProfile };
   }, {

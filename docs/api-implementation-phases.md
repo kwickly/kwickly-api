@@ -129,3 +129,13 @@ This phase ensures the backend is fully decoupled from local development constra
 *   [ ] **Automated Testing Suite:**
     *   Implement `bun:test` framework.
     *   Write End-to-End (E2E) tests for critical flows (e.g., OTP Verification, Order Placement).
+
+---
+
+## 🚧 Phase 7: Automated Testing (PENDING)
+
+This phase ensures all endpoints are rigorously tested to prevent regressions.
+
+*   [ ] Set up `bun:test` in `package.json`.
+*   [ ] Write E2E integration tests for `auth.controller` (OTP, Login).
+*   [ ] Write E2E integration tests for `orders.controller` (Order Placement, Cart calculation).

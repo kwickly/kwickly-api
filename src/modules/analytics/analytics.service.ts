@@ -17,7 +17,7 @@ export class AnalyticsService {
       WHERE 
         tenant_id = ${tenantId} 
         AND branch_id = ${branchId}
-        AND status = 'completed'
+        AND status = 'delivered'
         AND DATE(created_at) = DATE(${date})
     `);
 
@@ -45,7 +45,7 @@ export class AnalyticsService {
       WHERE 
         o.tenant_id = ${tenantId}
         AND o.branch_id = ${branchId}
-        AND o.status = 'completed'
+        AND o.status = 'delivered'
       GROUP BY oi.name
       ORDER BY total_quantity_sold DESC
       LIMIT ${limit}
