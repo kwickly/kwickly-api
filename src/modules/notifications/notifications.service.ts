@@ -44,14 +44,20 @@ export class NotificationService {
     try {
       await this.mockProviderSend(template.channel, userId, subject, body);
       
-      await db.update(notificationLogs)
-        .set({ status: 'SENT', sentAt: new Date() })
-        .where(eq(notificationLogs.id, log.id));
+      if (log) {
+        await db.update(notificationLogs)
+          .set({ status: 'SENT', sentAt: new Date() })
+          .where(eq(notificationLogs.id, log.id));
+      }
     } catch (e: any) {
-      logger.error({ err: e, logId: log.id }, 'Notification Send Failed');
-      await db.update(notificationLogs)
-        .set({ status: 'FAILED', metadata: { error: e.message } })
-        .where(eq(notificationLogs.id, log.id));
+      if (log) {
+        logger.error({ err: e, logId: log.id }, 'Notification Send Failed');
+        await db.update(notificationLogs)
+          .set({ status: 'FAILED', metadata: { error: e.message } })
+          .where(eq(notificationLogs.id, log.id));
+      } else {
+        logger.error({ err: e }, 'Notification Send Failed (No Log Created)');
+      }
     }
   }
 

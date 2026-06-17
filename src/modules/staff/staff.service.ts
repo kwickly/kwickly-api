@@ -1,10 +1,72 @@
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull, inArray, or } from 'drizzle-orm';
 import crypto from 'crypto';
-import { db } from '../../db/index';
-import { staffProfiles } from '../../db/schema/staff';
-import { users } from '../../db/schema/users';
+import { db } from '../../db/index.ts';
+import { staffProfiles } from '../../db/schema/staff.ts';
+import { users } from '../../db/schema/users.ts';
+import { roles, rolePermissions, permissions } from '../../db/schema/rbac.ts';
+import { redis } from '../../shared/redis.ts';
 
 export class StaffService {
+  /**
+   * Fetch roles available for a tenant (System + Custom)
+   */
+  async getRoles(tenantId: string) {
+    const allRoles = await db.query.roles.findMany({
+      where: or(
+        eq(roles.tenantId, tenantId),
+        isNull(roles.tenantId)
+      ),
+      with: {
+        permissions: {
+          with: {
+            permission: true
+          }
+        }
+      }
+    });
+
+    return allRoles.map(r => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      isSystem: r.isSystem,
+      permissions: r.permissions.map(p => p.permission.slug)
+    }));
+  }
+
+  /**
+   * Update permissions for a specific role and invalidate cache
+   */
+  async updateRolePermissions(roleId: string, permissionSlugs: string[]) {
+    // 1. Get permission IDs for the slugs
+    const perms = await db.query.permissions.findMany({
+      where: inArray(permissions.slug, permissionSlugs)
+    });
+
+    const permissionIds = perms.map(p => p.id);
+
+    // 2. Transactionally update role_permissions
+    await db.transaction(async (tx) => {
+      // Remove existing
+      await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+      
+      // Add new
+      if (permissionIds.length > 0) {
+        await tx.insert(rolePermissions).values(
+          permissionIds.map(permissionId => ({ roleId, permissionId }))
+        );
+      }
+    });
+
+    // 3. Invalidate Redis Cache
+    const roleRecord = await db.query.roles.findFirst({ where: eq(roles.id, roleId) });
+    if (roleRecord) {
+      const cacheKey = `rbac:permissions:role:${roleRecord.slug}:${roleRecord.tenantId || 'system'}`;
+      await redis.del(cacheKey);
+    }
+
+    return { success: true };
+  }
   /**
    * Fetch staff profiles with user details
    */

@@ -1,13 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
-import { NotificationService } from './notifications.service';
+import { authPlugin } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
+import { NotificationService } from './notifications.service.ts';
 
 const notificationService = new NotificationService();
 
 export const notificationsController = new Elysia({ prefix: '/v1/notifications' })
   .use(authPlugin)
-  .use(requireRoles(['admin', 'manager']))
+  .use(requirePermission('settings:manage'))
 
   /**
    * POST /v1/notifications/templates

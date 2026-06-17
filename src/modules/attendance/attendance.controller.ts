@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { AttendanceService } from './attendance.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { AttendanceService } from './attendance.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const attendanceService = new AttendanceService();
 
@@ -20,7 +20,7 @@ export const attendanceController = new Elysia({ prefix: '/v1/attendance' })
   })
 
   // From here down, requires Manager/Admin privileges
-  .use(requireRoles(['super_admin', 'tenant_owner', 'manager']))
+  .use(requirePermission('attendance:manage'))
 
   // Manager gets the branch QR string to print
   .get('/branch-qr/:branchId', async ({ user, params }) => {

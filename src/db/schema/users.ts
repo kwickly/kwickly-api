@@ -11,6 +11,7 @@ import { tenants } from './tenants';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const userRoleEnum = pgEnum('user_role', [
+  'platform_owner',
   'super_admin',
   'tenant_owner',
   'manager',

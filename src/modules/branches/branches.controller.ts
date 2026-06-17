@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
-import { BranchesService } from './branches.service';
+import { authPlugin } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
+import { BranchesService } from './branches.service.ts';
 
 const branchesService = new BranchesService();
 
@@ -22,7 +22,7 @@ export const branchesController = new Elysia({ prefix: '/v1/branches' })
     return { success: true, data };
   })
 
-  .use(requireRoles(['admin', 'manager']))
+  .use(requirePermission('settings:manage'))
 
   /**
    * POST /v1/branches

@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
-import { MenusService } from './menus.service';
+import { authPlugin } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
+import { MenusService } from './menus.service.ts';
 
 const menusService = new MenusService();
 
@@ -25,7 +25,7 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     return { success: true, data };
   })
 
-  .use(requireRoles(['admin', 'manager']))
+  .use(requirePermission(['admin', 'manager']))
 
   /**
    * POST /v1/menus/categories

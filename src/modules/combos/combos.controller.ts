@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { CombosService } from './combos.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { CombosService } from './combos.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const combosService = new CombosService();
 
@@ -20,7 +20,7 @@ export const combosController = new Elysia({ prefix: '/v1/combos' })
   })
 
   // Protected Admin/Manager endpoints
-  .use(requireRoles(['super_admin', 'tenant_owner', 'manager']))
+  .use(requirePermission('menu:write'))
   
   .post('/', async ({ user, body }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');

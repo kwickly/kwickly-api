@@ -1,13 +1,13 @@
 import { Elysia, t } from 'elysia';
 import { KOTsService } from './kots.service.ts';
 import { authPlugin } from '../auth/auth.guard.ts';
-import { requireRoles } from '../auth/rbac.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const kotsService = new KOTsService();
 
 export const kotsController = new Elysia({ prefix: '/v1/kots' })
   .use(authPlugin)
-  .use(requireRoles(['admin', 'manager', 'kitchen_staff', 'cashier']))
+  .use(requirePermission('orders:write'))
 
   /**
    * PATCH /v1/kots/:id/status

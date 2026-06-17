@@ -1,13 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { PayrollService } from './payroll.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { PayrollService } from './payroll.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const payrollService = new PayrollService();
 
 export const payrollController = new Elysia({ prefix: '/v1/payroll' })
   .use(requireAuth)
-  .use(requireRoles(['super_admin', 'tenant_owner', 'hr_manager']))
+  .use(requirePermission('payroll:manage'))
 
   .post('/run', async ({ user, body }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');

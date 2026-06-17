@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { PromotionsService } from './promotions.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { PromotionsService } from './promotions.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const promotionsService = new PromotionsService();
 
@@ -23,7 +23,7 @@ export const promotionsController = new Elysia({ prefix: '/v1/promotions' })
   })
 
   // Manager-facing endpoints to create promotions
-  .use(requireRoles(['super_admin', 'tenant_owner', 'manager']))
+  .use(requirePermission('promotions:manage'))
 
   .post('/coupons', async ({ user, body }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');

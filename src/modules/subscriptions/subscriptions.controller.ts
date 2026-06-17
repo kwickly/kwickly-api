@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { SubscriptionsService } from './subscriptions.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { SubscriptionsService } from './subscriptions.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const subscriptionsService = new SubscriptionsService();
 
@@ -42,7 +42,7 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
   // Only staff/scanners can deduct meals
   .group('', (app) =>
     app
-      .use(requireRoles(['super_admin', 'tenant_owner', 'manager', 'cashier', 'qr_scanner']))
+      .use(requirePermission('orders:write'))
       .post('/staff/deduct-meal', async ({ user, body }) => {
         if (!user || !user.tenantId || !user.branchId) {
           throw new Error('Staff user must be assigned to a branch to scan QR codes.');
@@ -60,7 +60,7 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
   // Create a new subscription plan (restricted to Super Admins & Tenant Owners)
   .group('', (app) =>
     app
-      .use(requireRoles(['super_admin', 'tenant_owner']))
+      .use(requirePermission('subscriptions:manage'))
       .post('/plans', async ({ user, body }) => {
         if (!user || !user.tenantId) throw new Error('Unauthorized');
         const plan = await subscriptionsService.createPlan(user.tenantId, body as any);

@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { authPlugin } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 import { AdsService } from './ads.service';
 
 const adsService = new AdsService();
@@ -32,7 +32,7 @@ export const adsController = new Elysia({ prefix: '/v1/ads' })
   })
 
   .use(authPlugin)
-  .use(requireRoles(['admin', 'manager']))
+  .use(requirePermission('promotions:manage'))
 
   /**
    * POST /v1/ads

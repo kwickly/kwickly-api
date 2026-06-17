@@ -51,16 +51,38 @@ async function main() {
   if (!swamyMainBranch) throw new Error('Failed to seed swamyMainBranch');
 
   // 3. RBAC Seed
-  console.log('🔐 Seeding RBAC...');
-  const permissions = [
-    { name: 'Manage Menu', slug: 'menu:write', description: 'Can add/edit/delete menu items' },
+  console.log('🔐 Seeding Granular RBAC...');
+  const permissionsData = [
+    // Menu Management
+    { name: 'View Menu', slug: 'menu:read', description: 'Can view menu items and categories' },
+    { name: 'Manage Menu', slug: 'menu:write', description: 'Can add/edit/delete menu items and categories' },
+    // Order Management
     { name: 'View Orders', slug: 'orders:read', description: 'Can view order history' },
+    { name: 'Manage Orders', slug: 'orders:write', description: 'Can create/update orders' },
+    // Staff Management
+    { name: 'View Staff', slug: 'staff:read', description: 'Can view staff profiles' },
     { name: 'Manage Staff', slug: 'staff:write', description: 'Can manage staff profiles' },
+    // Analytics
     { name: 'View Analytics', slug: 'analytics:read', description: 'Can view branch analytics' },
+    // Inventory
+    { name: 'View Inventory', slug: 'inventory:read', description: 'Can view stock levels' },
+    { name: 'Manage Inventory', slug: 'inventory:write', description: 'Can update stock levels' },
+    // Billing & Payments
+    { name: 'Manage Billing', slug: 'billing:manage', description: 'Can manage invoices and payments' },
+    // Settings
+    { name: 'Manage Settings', slug: 'settings:manage', description: 'Can update branch/tenant settings' },
+    // Attendance & Payroll
+    { name: 'Manage Attendance', slug: 'attendance:manage', description: 'Can view and edit staff attendance' },
+    { name: 'Manage Payroll', slug: 'payroll:manage', description: 'Can process payroll and salary slips' },
+    // CRM & Promotions
+    { name: 'Manage CRM', slug: 'crm:manage', description: 'Can view and manage customer data' },
+    { name: 'Manage Promotions', slug: 'promotions:manage', description: 'Can create coupons and ads' },
+    // Subscriptions
+    { name: 'Manage Subscriptions', slug: 'subscriptions:manage', description: 'Can manage SaaS plans' },
   ];
 
   const seededPermissions = [];
-  for (const perm of permissions) {
+  for (const perm of permissionsData) {
     const [p] = await db.insert(schema.permissions).values(perm).onConflictDoUpdate({
       target: schema.permissions.slug,
       set: perm
@@ -68,16 +90,59 @@ async function main() {
     if (p) seededPermissions.push(p);
   }
 
-  const [managerRole] = await db.insert(schema.roles).values([
-    { name: 'Branch Manager', slug: 'branch_manager' },
-  ]).onConflictDoUpdate({
-    target: schema.roles.slug,
-    set: { name: 'Branch Manager' }
-  }).returning();
+  const systemRolesData = [
+    { name: 'Platform Owner', slug: 'platform_owner', isSystem: true },
+    { name: 'Super Admin', slug: 'super_admin', isSystem: true },
+    { name: 'Tenant Owner', slug: 'tenant_owner', isSystem: true },
+    { name: 'Branch Manager', slug: 'manager', isSystem: true },
+    { name: 'Cashier', slug: 'cashier', isSystem: true },
+    { name: 'Kitchen Staff', slug: 'kitchen_staff', isSystem: true },
+    { name: 'QR Scanner', slug: 'qr_scanner', isSystem: true },
+  ];
 
-  if (managerRole) {
+  const seededRoles: Record<string, any> = {};
+  for (const role of systemRolesData) {
+    const [r] = await db.insert(schema.roles).values(role).onConflictDoUpdate({
+      target: [schema.roles.slug, schema.roles.tenantId],
+      set: { name: role.name, isSystem: true }
+    }).returning();
+    if (r) seededRoles[role.slug] = r;
+  }
+
+  // Assign Permissions to Roles
+  console.log('🔗 Mapping Permissions to Roles...');
+  
+  // Platform Owner, Super Admin, Tenant Owner get ALL permissions
+  const allPermissions = seededPermissions.map(p => p.id);
+  const fullAccessRoles = ['platform_owner', 'super_admin', 'tenant_owner'];
+  
+  for (const slug of fullAccessRoles) {
+    if (seededRoles[slug]) {
+      await db.insert(schema.rolePermissions).values(
+        allPermissions.map(permissionId => ({ roleId: seededRoles[slug].id, permissionId }))
+      ).onConflictDoNothing();
+    }
+  }
+
+  // Branch Manager permissions
+  const managerPermissions = seededPermissions.filter(p => 
+    ['menu:read', 'menu:write', 'orders:read', 'orders:write', 'staff:read', 'analytics:read', 'inventory:read', 'inventory:write', 'billing:manage'].includes(p.slug)
+  ).map(p => p.id);
+  
+  if (seededRoles['manager']) {
     await db.insert(schema.rolePermissions).values(
-      seededPermissions.map(p => ({ roleId: managerRole.id, permissionId: p.id }))
+      managerPermissions.map(permissionId => ({ roleId: seededRoles['manager'].id, permissionId }))
+    ).onConflictDoNothing();
+  }
+
+  // Cashier permissions
+  const cashierPermissions = seededPermissions.filter(p => 
+    ['menu:read', 'orders:read', 'orders:write', 'billing:manage'].includes(p.slug)
+  ).map(p => p.id);
+  
+  if (seededRoles['cashier']) {
+    await db.insert(schema.rolePermissions).values(
+      cashierPermissions.map(permissionId => ({ roleId: seededRoles['cashier'].id, permissionId }))
     ).onConflictDoNothing();
   }
 

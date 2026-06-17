@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { PaymentsService } from './payments.service';
-import { requireAuth } from '../auth/auth.guard';
+import { requireAuth } from '../auth/auth.guard.ts';
 
 const paymentsService = new PaymentsService();
 

@@ -1,13 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { InventoryService } from './inventory.service';
-import { requireAuth } from '../auth/auth.guard';
-import { requireRoles } from '../auth/rbac.guard';
+import { InventoryService } from './inventory.service.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
+import { requirePermission } from '../auth/rbac.guard.ts';
 
 const inventoryService = new InventoryService();
 
 export const inventoryController = new Elysia({ prefix: '/v1/inventory' })
   .use(requireAuth)
-  .use(requireRoles(['super_admin', 'tenant_owner', 'manager', 'inventory_manager']))
+  .use(requirePermission('inventory:write'))
 
   .get('/materials', async ({ user }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');
