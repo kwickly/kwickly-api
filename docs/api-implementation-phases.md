@@ -22,7 +22,7 @@ This phase established the bedrock of the API, ensuring it is secure, fast, and 
 *   [x] **Route Protection (Guards):**
     *   `auth.guard.ts`: Intercepts and validates JWTs (via headers or HttpOnly cookies) using Elysia `.derive()`.
     *   `rbac.guard.ts`: Role-Based Access Control middleware to protect sensitive endpoints (e.g., `requireRoles(['admin', 'manager'])`).
-*   [x] **Caching Infrastructure:** Integrated `@upstash/redis` in `src/shared/redis.ts` utilizing a Cache-Aside pattern.
+*   [x] **Caching Infrastructure:** Integrated native TCP Redis (`Bun.redis`) in `src/shared/redis.ts` utilizing a Cache-Aside pattern (replacing the legacy HTTP `@upstash/redis`).
 *   [x] **Observability:**
     *   Structured JSON Logging via `pino` (`logger.ts`).
     *   Global `auditPlugin` (`audit.ts`) automatically tracking all mutating requests (POST/PUT/PATCH/DELETE) into the `audit_logs` table.

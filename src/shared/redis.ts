@@ -1,12 +1,7 @@
-import { Redis } from '@upstash/redis';
+import { redis } from 'bun';
 
-// Initialize the Upstash Redis client
-// We use Upstash because it connects over HTTP/REST, making it perfect for 
-// serverless/edge environments where persistent TCP connections would fail.
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+// Re-export the native Redis client
+export { redis };
 
 /**
  * Cache-Aside Helper Function
@@ -23,9 +18,13 @@ export async function withCache<T>(
   ttlSeconds: number = 3600
 ): Promise<T> {
   try {
-    const cached = await redis.get<T>(key);
+    const cached = await redis.get(key);
     if (cached !== null) {
-      return cached;
+      try {
+        return JSON.parse(cached) as T;
+      } catch (parseError) {
+        console.error(`Redis JSON Parse Error for key ${key}:`, parseError);
+      }
     }
   } catch (error) {
     console.error(`Redis Get Error for key ${key}:`, error);
@@ -35,10 +34,11 @@ export async function withCache<T>(
   const freshData = await fetcher();
 
   try {
-    await redis.set(key, freshData, { ex: ttlSeconds });
+    await redis.set(key, JSON.stringify(freshData), 'EX', ttlSeconds);
   } catch (error) {
     console.error(`Redis Set Error for key ${key}:`, error);
   }
 
   return freshData;
 }
+

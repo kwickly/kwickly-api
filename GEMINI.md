@@ -7,7 +7,7 @@ Welcome! If you are an AI agent assisting with the Kwickly API, you must adhere 
 - **Framework:** ElysiaJS
 - **ORM:** Drizzle ORM
 - **Primary Database:** PostgreSQL (Neon Serverless)
-- **Cache:** Upstash Redis (Serverless)
+- **Cache:** TCP Redis (via native `Bun.redis`)
 
 ## 2. Strict Database Rules
 Failure to follow these rules will compromise the system's data integrity.

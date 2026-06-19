@@ -17,7 +17,7 @@ Built for extreme low-latency at the edge, the API runs on **Bun** and leverages
 - **Framework:** [ElysiaJS](https://elysiajs.com/) (End-to-end Type Safety)
 - **Database:** PostgreSQL via [Neon Serverless](https://neon.tech)
 - **ORM:** [Drizzle ORM](https://orm.drizzle.team/)
-- **Caching:** [Upstash Redis](https://upstash.com/)
+- **Caching:** TCP Redis (via native `Bun.redis` client)
 - **Logging:** Pino (Structured JSON Logging)
 
 ## 🚀 Getting Started
