@@ -159,6 +159,13 @@ async function main() {
       role: 'super_admin' as const,
     },
     {
+      name: 'Platform Owner',
+      email: 'cvs@kwickly.com',
+      phone: '9999999999',
+      password: mockPassword,
+      role: 'platform_owner' as const,
+    },
+    {
       tenantId: swamyTenant.id,
       name: 'Swamy Owner',
       email: 'owner@swamy.com',
