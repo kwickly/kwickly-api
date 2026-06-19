@@ -111,31 +111,33 @@ This phase added endpoints supporting the advanced capabilities introduced in th
 *   [x] **CRM Controller Endpoints:** Mock logic for rules-based segmentation, WhatsApp campaigns, churn prevention lists, and loyalty config (`crm.controller.ts`).
 *   [x] **Staff Operations:** Mock logic for timesheets / clock-in approvals and dynamic RBAC role builder (`staff.controller.ts`).
 *   [x] **Analytics Intelligence:** Mock logic for AI-driven meal demand forecasting (Prophet) and combo bundle recommendations (`analytics.controller.ts`).
+*   [x] **Tenant Settings Customizer APIs:** Implemented REST endpoints `/v1/tenant/settings` (`GET` and `PATCH`) to retrieve and update brand configuration, logo URLs, and details for multi-tenant white-labeling (`tenant.controller.ts`).
+*   [x] **Auth Tenant Integration:** Enhanced login, OTP verify, and token refresh in `AuthService` to include tenant-specific brand details in JWT sessions.
+*   [x] **Super Admin Impersonation & RBAC Bypass:** Updated `rbac.guard.ts` to bypass permissions if the user is a `platform_owner` or `super_admin` to support live tenant impersonation (Inspection Mode).
 
 ---
 
-## 🚧 Phase 6: Infrastructure & Launch Readiness (PENDING)
+## 🚧 Phase 6: Infrastructure & Launch Readiness (PARTIALLY COMPLETED)
 
 This phase ensures the backend is fully decoupled from local development constraints and ready for edge deployment and team collaboration.
 
 *   [ ] **Cloud Storage Integration (Media & Files):**
     *   Implement an S3/Cloudflare R2 storage module for handling multipart form uploads.
     *   Endpoints for uploading Menu Item Images, Branch Logos, and Staff Avatars.
-*   [ ] **Deployment Containerization (Docker):**
-    *   Create an optimized, multi-stage `Dockerfile` built for the `oven/bun` runtime.
-    *   Configure `docker-compose.yml` for local orchestration if necessary.
+*   [x] **Deployment Containerization (Docker):**
+    *   Created an optimized, multi-stage `Dockerfile` built for the `oven/bun` runtime.
 *   [ ] **Automated CI/CD Pipelines:**
     *   Set up GitHub Actions (`.github/workflows/ci.yml`) to automatically run `bun install` and type-checking on every Pull Request.
-*   [ ] **Automated Testing Suite:**
-    *   Implement `bun:test` framework.
-    *   Write End-to-End (E2E) tests for critical flows (e.g., OTP Verification, Order Placement).
+*   [x] **Automated Testing Suite:**
+    *   Implemented `bun:test` framework.
+    *   Wrote End-to-End (E2E) tests for critical flows (e.g., OTP Verification, Order Placement).
 
 ---
 
-## 🚧 Phase 7: Automated Testing (PENDING)
+## ✅ Phase 7: Automated Testing (COMPLETED)
 
 This phase ensures all endpoints are rigorously tested to prevent regressions.
 
-*   [ ] Set up `bun:test` in `package.json`.
-*   [ ] Write E2E integration tests for `auth.controller` (OTP, Login).
-*   [ ] Write E2E integration tests for `orders.controller` (Order Placement, Cart calculation).
+*   [x] Set up `bun:test` in `package.json`.
+*   [x] Write E2E integration tests for `auth.controller` (OTP, Login).
+*   [x] Write E2E integration tests for `orders.controller` (Order Placement, Cart calculation).

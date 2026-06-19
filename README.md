@@ -59,6 +59,13 @@ bun run start
 ```
 The API will be available at `http://localhost:3000`. Swagger documentation is automatically generated at `http://localhost:3000/swagger`.
 
+## 🎨 Multi-Tenant White-Labeling & Impersonation Support
+
+The API provides robust endpoints to support white-labeled interfaces:
+- **Tenant Customization API**: Exposes `GET` and `PATCH` `/v1/tenant/settings` endpoints allowing tenant administrators to customize names, logos, contact details, and brand colors.
+- **Dynamic Session Injection**: Returns `tenantDetails` (branding configurations) during login, session refresh, and OTP verification to support client-side variable injection.
+- **Administrative Impersonation**: Built-in authorization bypass within `rbac.guard.ts` allows Platform Owners and Super Admins to safely impersonate any tenant workspace (Inspection Mode) and retrieve their specific branding assets seamlessly.
+
 ## 🏗 Architectural Guidelines
 
 Kwickly API adheres strictly to enterprise-grade architectural standards:

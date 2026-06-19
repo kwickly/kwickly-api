@@ -1,8 +1,62 @@
-import { eq, and, gt, desc } from 'drizzle-orm';
+import { eq, and, gt, desc, isNull } from 'drizzle-orm';
 import { db } from '../../db';
-import { users, otpCodes, sessions, userRoleEnum } from '../../db/schema';
+import { users, otpCodes, sessions, userRoleEnum, roles, rolePermissions, permissions, tenants } from '../../db/schema';
 
 export class AuthService {
+  /**
+   * Helper to load tenant branding info.
+   */
+  async getTenantDetails(tenantId: string | null) {
+    if (!tenantId) return null;
+    const tenantRecord = await db.query.tenants.findFirst({
+      where: eq(tenants.id, tenantId)
+    });
+    if (!tenantRecord) return null;
+    return {
+      id: tenantRecord.id,
+      name: tenantRecord.name,
+      logoUrl: tenantRecord.logoUrl,
+      brandColor: tenantRecord.brandColor
+    };
+  }
+
+  /**
+   * Helper to load role info and permissions for RBAC context.
+   */
+  async getRoleDetails(roleSlug: string, tenantId: string | null) {
+    let roleRecord = await db.query.roles.findFirst({
+      where: and(
+        eq(roles.slug, roleSlug),
+        eq(roles.tenantId, tenantId as string)
+      )
+    });
+
+    if (!roleRecord) {
+      roleRecord = await db.query.roles.findFirst({
+        where: and(
+          eq(roles.slug, roleSlug),
+          isNull(roles.tenantId)
+        )
+      });
+    }
+
+    if (!roleRecord) return undefined;
+
+    const perms = await db
+      .select({ slug: permissions.slug })
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, roleRecord.id));
+
+    return {
+      id: roleRecord.id,
+      name: roleRecord.name,
+      slug: roleRecord.slug,
+      isSystem: roleRecord.isSystem,
+      permissions: perms.map(p => p.slug)
+    };
+  }
+
   /**
    * Traditional password-based login for staff and admins.
    */
@@ -25,7 +79,14 @@ export class AuthService {
     // Update last login
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 
-    return user;
+    const roleDetails = await this.getRoleDetails(user.role, user.tenantId);
+    const tenantDetails = await this.getTenantDetails(user.tenantId);
+
+    return {
+      ...user,
+      roleDetails,
+      tenantDetails
+    };
   }
 
   /**
@@ -88,7 +149,14 @@ export class AuthService {
       throw new Error('Failed to create user record');
     }
 
-    return user;
+    const roleDetails = await this.getRoleDetails(user.role, user.tenantId);
+    const tenantDetails = await this.getTenantDetails(user.tenantId);
+
+    return {
+      ...user,
+      roleDetails,
+      tenantDetails
+    };
   }
 
   /**
@@ -131,6 +199,16 @@ export class AuthService {
       throw new Error('User not found');
     }
 
-    return { user, session: sessionRecord };
+    const roleDetails = await this.getRoleDetails(user.role, user.tenantId);
+    const tenantDetails = await this.getTenantDetails(user.tenantId);
+
+    return { 
+      user: {
+        ...user,
+        roleDetails,
+        tenantDetails
+      }, 
+      session: sessionRecord 
+    };
   }
 }

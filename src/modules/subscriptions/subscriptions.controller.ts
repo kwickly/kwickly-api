@@ -11,11 +11,13 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
   // Get available plans (Any authenticated user can see plans for a branch)
   .get('/plans', async ({ user, query }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');
-    const plans = await subscriptionsService.getPlans(user.tenantId, query.branchId);
+    const includeInactive = query.includeInactive === 'true' || query.includeInactive === true;
+    const plans = await subscriptionsService.getPlans(user.tenantId, query.branchId, includeInactive);
     return { success: true, data: plans };
   }, {
     query: t.Object({
       branchId: t.Optional(t.String()),
+      includeInactive: t.Optional(t.Union([t.String(), t.Boolean()])),
     })
   })
 
@@ -57,7 +59,7 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
       })
   )
   
-  // Create a new subscription plan (restricted to Super Admins & Tenant Owners)
+  // Create, Edit, Delete a subscription plan (restricted to Super Admins & Tenant Owners)
   .group('', (app) =>
     app
       .use(requirePermission('subscriptions:manage'))
@@ -78,5 +80,29 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
           carryForward: t.Optional(t.Boolean()),
           allowHoliday: t.Optional(t.Boolean()),
         })
+      })
+      .patch('/plans/:id', async ({ user, params, body }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        const plan = await subscriptionsService.updatePlan(user.tenantId, params.id, body as any);
+        return { success: true, data: plan, message: 'Plan updated' };
+      }, {
+        body: t.Object({
+          name: t.Optional(t.String()),
+          description: t.Optional(t.String()),
+          mealType: t.Optional(t.Union([t.Literal('lunch'), t.Literal('dinner'), t.Literal('both')])),
+          planType: t.Optional(t.Union([t.Literal('meal_count'), t.Literal('monthly'), t.Literal('custom')])),
+          totalMeals: t.Optional(t.Number()),
+          validityDays: t.Optional(t.Number()),
+          price: t.Optional(t.String()),
+          branchId: t.Optional(t.String()),
+          carryForward: t.Optional(t.Boolean()),
+          allowHoliday: t.Optional(t.Boolean()),
+          isActive: t.Optional(t.Boolean()),
+        })
+      })
+      .delete('/plans/:id', async ({ user, params }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        const plan = await subscriptionsService.deletePlan(user.tenantId, params.id);
+        return { success: true, data: plan, message: 'Plan deleted' };
       })
   );

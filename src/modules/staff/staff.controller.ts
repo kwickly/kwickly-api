@@ -55,11 +55,52 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     beforeHandle: [checkPermission('staff:read')]
   })
 
-  .patch('/roles/:id', async ({ params, body }) => {
-    return await staffService.updateRolePermissions(params.id, body.permissions);
+  .patch('/roles/:id', async ({ user, params, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    return await staffService.updateRolePermissions(user.tenantId, params.id, body.permissions);
   }, {
     beforeHandle: [checkPermission('staff:write')],
     body: t.Object({
       permissions: t.Array(t.String())
     })
   })
+
+  .patch('/:id', async ({ user, params, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const updated = await staffService.updateStaff(user.tenantId, params.id, body as any);
+    return { success: true, data: updated };
+  }, {
+    beforeHandle: [checkPermission('staff:write')],
+    body: t.Object({
+      name: t.Optional(t.String()),
+      phone: t.Optional(t.String()),
+      role: t.Optional(t.Union([
+        t.Literal('manager'),
+        t.Literal('cashier'),
+        t.Literal('kitchen_staff'),
+        t.Literal('qr_scanner')
+      ])),
+      branchId: t.Optional(t.String()),
+      isActive: t.Optional(t.Boolean()),
+      salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
+      baseSalary: t.Optional(t.String()),
+      hourlyRate: t.Optional(t.String()),
+    })
+  })
+
+  .delete('/:id', async ({ user, params, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const deleted = await staffService.deleteStaff(user.tenantId, params.id);
+    return { success: true, data: deleted };
+  }, {
+    beforeHandle: [checkPermission('staff:write')]
+  });

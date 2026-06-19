@@ -49,6 +49,9 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
           id: user.id,
           name: user.name,
           role: user.role,
+          tenantId: user.tenantId,
+          roleDetails: (user as any).roleDetails,
+          tenantDetails: (user as any).tenantDetails,
         }
       };
     } catch (e: any) {
@@ -94,6 +97,9 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
           id: user.id,
           name: user.name,
           role: user.role,
+          tenantId: user.tenantId,
+          roleDetails: (user as any).roleDetails,
+          tenantDetails: (user as any).tenantDetails,
         }
       };
     } catch (e: any) {

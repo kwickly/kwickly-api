@@ -15,22 +15,34 @@ export const checkPermission = (requiredSlugs: string | string[]) => async ({ us
     return { error: 'Unauthorized' };
   }
 
+  // Bypass permission checks for system administration roles
+  if (user.role === 'platform_owner' || user.role === 'super_admin') {
+    return;
+  }
+
   const slugs = Array.isArray(requiredSlugs) ? requiredSlugs : [requiredSlugs];
 
   // Fetch user permissions with caching
   const cacheKey = `rbac:permissions:role:${user.role}:${user.tenantId || 'system'}`;
   
   const userPermissions = await withCache(cacheKey, async () => {
-    // 1. Find the role record
-    const roleRecord = await db.query.roles.findFirst({
+    // 1. Find the role record: Try tenant-specific custom role first
+    let roleRecord = await db.query.roles.findFirst({
       where: and(
         eq(roles.slug, user.role),
-        or(
-            eq(roles.tenantId, user.tenantId as string),
-            isNull(roles.tenantId)
-        )
+        eq(roles.tenantId, user.tenantId as string)
       )
     });
+
+    // Fall back to system role (where tenantId is null)
+    if (!roleRecord) {
+      roleRecord = await db.query.roles.findFirst({
+        where: and(
+          eq(roles.slug, user.role),
+          isNull(roles.tenantId)
+        )
+      });
+    }
 
     if (!roleRecord) return [];
 

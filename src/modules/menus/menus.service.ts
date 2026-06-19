@@ -147,4 +147,50 @@ export class MenusService {
       )
       .execute();
   }
+
+  /**
+   * Updates an existing Menu Category.
+   */
+  async updateCategory(tenantId: string, id: string, data: Partial<NewMenuCategory>) {
+    const [updated] = await db
+      .update(menuCategories)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)))
+      .returning();
+    return updated;
+  }
+
+  /**
+   * Deletes a Menu Category. Soft delete or hard delete depending on design.
+   */
+  async deleteCategory(tenantId: string, id: string) {
+    // We will delete the category, and set its items categoryId to null or uncategorized
+    await db.transaction(async (tx) => {
+      await tx
+        .update(menuItems)
+        .set({ categoryId: null })
+        .where(and(eq(menuItems.categoryId, id), eq(menuItems.tenantId, tenantId)));
+
+      await tx
+        .delete(menuCategories)
+        .where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)));
+    });
+    return { success: true };
+  }
+
+  /**
+   * Soft deletes a Menu Item.
+   */
+  async deleteMenuItem(tenantId: string, branchId: string, id: string) {
+    const [deleted] = await db
+      .update(menuItems)
+      .set({ deletedAt: new Date(), isActive: false })
+      .where(and(eq(menuItems.id, id), eq(menuItems.tenantId, tenantId)))
+      .returning();
+
+    // Invalidate Redis cache
+    await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
+    return deleted;
+  }
 }
+

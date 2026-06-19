@@ -25,7 +25,7 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     return { success: true, data };
   })
 
-  .use(requirePermission(['admin', 'manager']))
+  .use(requirePermission('menu:write'))
 
   /**
    * POST /v1/menus/categories
@@ -74,6 +74,40 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
       price: t.String(),
       isActive: t.Boolean(),
     }))
+  })
+  
+  /**
+   * DELETE /v1/menus/items/:id
+   * Soft deletes a menu item.
+   */
+  .delete('/items/:id', async ({ params: { id }, user, headers }) => {
+    const branchId = headers['x-branch-id'] || 'default';
+    const data = await menusService.deleteMenuItem(user!.tenantId!, branchId, id);
+    return { success: true, data, message: 'Menu item deleted' };
+  })
+
+  /**
+   * PATCH /v1/menus/categories/:id
+   * Updates a category name or order.
+   */
+  .patch('/categories/:id', async ({ params: { id }, body, user }) => {
+    const data = await menusService.updateCategory(user!.tenantId!, id, body);
+    return { success: true, data, message: 'Category updated' };
+  }, {
+    body: t.Partial(t.Object({
+      name: t.String(),
+      sortOrder: t.Number(),
+      isActive: t.Boolean()
+    }))
+  })
+
+  /**
+   * DELETE /v1/menus/categories/:id
+   * Deletes a category and uncategorizes its items.
+   */
+  .delete('/categories/:id', async ({ params: { id }, user }) => {
+    const data = await menusService.deleteCategory(user!.tenantId!, id);
+    return { success: true, data, message: 'Category deleted' };
   })
   
   /**

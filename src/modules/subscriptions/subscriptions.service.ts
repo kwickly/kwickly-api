@@ -1,4 +1,4 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, isNull } from 'drizzle-orm';
 import crypto from 'crypto';
 import { db } from '../../db/index';
 import { subscriptionPlans, customerSubscriptions } from '../../db/schema/subscriptions';
@@ -7,13 +7,16 @@ import { attendanceLogs } from '../../db/schema/attendance';
 
 export class SubscriptionsService {
   /**
-   * Fetch active subscription plans for a tenant/branch.
+   * Fetch subscription plans for a tenant/branch.
    */
-  async getPlans(tenantId: string, branchId?: string) {
+  async getPlans(tenantId: string, branchId?: string, includeInactive: boolean = false) {
     const conditions = [
       eq(subscriptionPlans.tenantId, tenantId),
-      eq(subscriptionPlans.isActive, true),
+      isNull(subscriptionPlans.deletedAt),
     ];
+    if (!includeInactive) {
+      conditions.push(eq(subscriptionPlans.isActive, true));
+    }
     if (branchId) {
       conditions.push(eq(subscriptionPlans.branchId, branchId));
     }
@@ -23,6 +26,39 @@ export class SubscriptionsService {
       .from(subscriptionPlans)
       .where(and(...conditions))
       .execute();
+  }
+
+  /**
+   * Update an existing subscription plan
+   */
+  async updatePlan(tenantId: string, planId: string, data: Partial<Omit<NewSubscriptionPlan, 'tenantId'>>) {
+    const [plan] = await db
+      .update(subscriptionPlans)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(subscriptionPlans.id, planId), eq(subscriptionPlans.tenantId, tenantId)))
+      .returning();
+
+    return plan;
+  }
+
+  /**
+   * Soft delete a subscription plan
+   */
+  async deletePlan(tenantId: string, planId: string) {
+    const [plan] = await db
+      .update(subscriptionPlans)
+      .set({
+        deletedAt: new Date(),
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(subscriptionPlans.id, planId), eq(subscriptionPlans.tenantId, tenantId)))
+      .returning();
+
+    return plan;
   }
 
   /**

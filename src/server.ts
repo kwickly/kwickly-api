@@ -5,6 +5,8 @@ import { rateLimit } from 'elysia-rate-limit';
 
 import { loggerPlugin, logger } from './shared/logger.ts';
 import { authController } from './modules/auth/auth.controller.ts';
+import { platformController } from './modules/platform/platform.controller.ts';
+import { tenantController } from './modules/tenant/tenant.controller.ts';
 import { auditPlugin } from './shared/audit.ts';
 
 import { branchesController } from './modules/branches/branches.controller.ts';
@@ -87,6 +89,8 @@ export const app = new Elysia()
     app
       // Register Phase 1 Modules
       .use(authController)
+      .use(platformController)
+      .use(tenantController)
 
       // Register Phase 2 Modules
       .use(branchesController)

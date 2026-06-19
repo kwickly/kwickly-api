@@ -37,6 +37,12 @@ export const authPlugin = (app: Elysia) => app
       return { user: null };
     }
 
+    // Support impersonation for Platform Owners/Super Admins
+    const impersonateTenantId = headers['x-impersonate-tenant-id'] as string | undefined;
+    if (impersonateTenantId && (payload.role === 'platform_owner' || payload.role === 'super_admin')) {
+      payload.tenantId = impersonateTenantId;
+    }
+
     return { user: payload };
   });
 
