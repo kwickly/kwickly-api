@@ -29,6 +29,7 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       const accessToken = await jwt.sign({
         sub: user.id,
         role: user.role,
+        roleId: (user as any).roleId || null,
         tenantId: user.tenantId,
         branchId: user.branchId,
       });
@@ -76,6 +77,7 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       const accessToken = await jwt.sign({
         sub: user.id,
         role: user.role,
+        roleId: (user as any).roleId || null,
         tenantId: user.tenantId,
         branchId: user.branchId,
       });
@@ -121,6 +123,7 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       const accessToken = await jwt.sign({
         sub: user.id,
         role: user.role,
+        roleId: (user as any).roleId || null,
         tenantId: user.tenantId,
         branchId: user.branchId,
       });

@@ -31,12 +31,7 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     body: t.Object({
       name: t.String(),
       phone: t.String(),
-      role: t.Union([
-        t.Literal('manager'),
-        t.Literal('cashier'),
-        t.Literal('kitchen_staff'),
-        t.Literal('qr_scanner')
-      ]),
+      roleId: t.String(),
       branchId: t.Optional(t.String()),
       salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
       baseSalary: t.Optional(t.String()),
@@ -60,12 +55,22 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       set.status = 403;
       return { success: false, error: 'Tenant context required' };
     }
-    return await staffService.updateRolePermissions(user.tenantId, params.id, body.permissions);
+    return await staffService.updateRolePermissions(user.tenantId, params.id, body.permissions, user);
   }, {
     beforeHandle: [checkPermission('staff:write')],
     body: t.Object({
       permissions: t.Array(t.String())
     })
+  })
+
+  .delete('/roles/:id', async ({ user, params, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    return await staffService.deleteRole(user.tenantId, params.id, user);
+  }, {
+    beforeHandle: [checkPermission('staff:write')]
   })
 
   .patch('/:id', async ({ user, params, body, set }) => {
@@ -80,12 +85,7 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     body: t.Object({
       name: t.Optional(t.String()),
       phone: t.Optional(t.String()),
-      role: t.Optional(t.Union([
-        t.Literal('manager'),
-        t.Literal('cashier'),
-        t.Literal('kitchen_staff'),
-        t.Literal('qr_scanner')
-      ])),
+      roleId: t.Optional(t.String()),
       branchId: t.Optional(t.String()),
       isActive: t.Optional(t.Boolean()),
       salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
@@ -103,4 +103,19 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     return { success: true, data: deleted };
   }, {
     beforeHandle: [checkPermission('staff:write')]
+  })
+  
+  .get('/timesheets', async () => {
+    return { success: true, data: [] };
+  }, {
+    beforeHandle: [checkPermission('staff:read')]
+  })
+
+  .patch('/timesheets/:id', async ({ body }) => {
+    return { success: true, data: { id: 'stub', status: body.status } };
+  }, {
+    beforeHandle: [checkPermission('staff:write')],
+    body: t.Object({
+      status: t.Union([t.Literal('APPROVED'), t.Literal('REJECTED')])
+    })
   });

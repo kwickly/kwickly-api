@@ -23,26 +23,26 @@ export const checkPermission = (requiredSlugs: string | string[]) => async ({ us
   const slugs = Array.isArray(requiredSlugs) ? requiredSlugs : [requiredSlugs];
 
   // Fetch user permissions with caching
-  const cacheKey = `rbac:permissions:role:${user.role}:${user.tenantId || 'system'}`;
+  const cacheKey = `rbac:permissions:roleId:${user.roleId || user.role}:${user.tenantId || 'system'}`;
   
   const userPermissions = await withCache(cacheKey, async () => {
-    // 1. Find the role record: Try tenant-specific custom role first
+    // If they have a roleId, we look up that specific role
+    if (user.roleId) {
+      const perms = await db
+        .select({ slug: permissions.slug })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(rolePermissions.roleId, user.roleId as string));
+      return perms.map(p => p.slug);
+    }
+    
+    // Otherwise fallback to their generic role slug (tenant_owner, etc) if they have permissions
     let roleRecord = await db.query.roles.findFirst({
       where: and(
         eq(roles.slug, user.role),
-        eq(roles.tenantId, user.tenantId as string)
+        isNull(roles.tenantId)
       )
     });
-
-    // Fall back to system role (where tenantId is null)
-    if (!roleRecord) {
-      roleRecord = await db.query.roles.findFirst({
-        where: and(
-          eq(roles.slug, user.role),
-          isNull(roles.tenantId)
-        )
-      });
-    }
 
     if (!roleRecord) return [];
 

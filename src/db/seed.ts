@@ -180,7 +180,8 @@ async function main() {
       email: 'manager@swamy.com',
       phone: '2222222222',
       password: mockPassword,
-      role: 'manager' as const,
+      role: 'staff' as const,
+      roleId: seededRoles['manager'].id,
     }
   ];
 
@@ -232,6 +233,8 @@ async function main() {
     Array.from({ length: 30 }).map(() => {
       const branch = faker.helpers.arrayElement(allBranches);
       if (!branch) throw new Error('No branches found for mock user generation');
+      const isCustomer = Math.random() > 0.7;
+      const staffRoleSlug = faker.helpers.arrayElement(['cashier', 'kitchen_staff', 'qr_scanner']);
       return {
         tenantId: branch.tenantId,
         branchId: branch.id,
@@ -239,7 +242,8 @@ async function main() {
         email: faker.internet.email(),
         phone: faker.phone.number(),
         password: mockPassword,
-        role: faker.helpers.arrayElement(['cashier', 'kitchen_staff', 'qr_scanner', 'customer'] as const),
+        role: isCustomer ? 'customer' as const : 'staff' as const,
+        roleId: isCustomer ? null : seededRoles[staffRoleSlug].id,
       };
     })
   ).returning();

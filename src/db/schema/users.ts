@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
+import { roles } from './rbac';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const userRoleEnum = pgEnum('user_role', [
@@ -18,6 +19,7 @@ export const userRoleEnum = pgEnum('user_role', [
   'cashier',
   'kitchen_staff',
   'qr_scanner',
+  'staff',
   'customer',
 ]);
 
@@ -31,6 +33,7 @@ export const users = pgTable('users', {
   email:       text('email').unique(),
   password:    text('password'), // Hashed password for staff login
   role:        userRoleEnum('role').notNull().default('customer'),
+  roleId:      uuid('role_id').references(() => roles.id), // Dynamic custom roles
   avatarUrl:   text('avatar_url'),
   isActive:    boolean('is_active').default(true).notNull(),
   lastLoginAt: timestamp('last_login_at'),
@@ -42,6 +45,7 @@ export const users = pgTable('users', {
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
+  rbacRole: one(roles, { fields: [users.roleId], references: [roles.id] }),
   passwordResetTokens: many(passwordResetTokens),
 }));
 

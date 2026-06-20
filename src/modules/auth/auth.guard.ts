@@ -4,6 +4,7 @@ import { jwt } from '@elysiajs/jwt';
 export type JwtPayload = {
   sub: string;         // User ID
   role: string;        // user_role
+  roleId: string | null; // rbac role id
   tenantId: string | null;
   branchId: string | null;
 };

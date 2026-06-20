@@ -37,7 +37,15 @@ export class StaffService {
   /**
    * Update permissions for a specific role and invalidate cache
    */
-  async updateRolePermissions(tenantId: string, roleId: string, permissionSlugs: string[]) {
+  async updateRolePermissions(tenantId: string | null, roleId: string, permissionSlugs: string[], requestingUser: any) {
+    // 0. Prevent Privilege Escalation
+    if (requestingUser && requestingUser.role !== 'platform_owner' && requestingUser.role !== 'tenant_owner' && requestingUser.role !== 'super_admin') {
+      const userPermissions = requestingUser.roleDetails?.permissions || [];
+      const hasAllRequired = permissionSlugs.every(slug => userPermissions.includes(slug));
+      if (!hasAllRequired) {
+        throw new Error('403: Privilege escalation detected - you cannot assign permissions you do not possess.');
+      }
+    }
     // 1. Fetch the target role details
     const roleRecord = await db.query.roles.findFirst({
       where: eq(roles.id, roleId)
@@ -105,20 +113,22 @@ export class StaffService {
     return await db.select({
       id: users.id,
       name: users.name,
-      role: users.role,
-      branchId: users.branchId,
       phone: users.phone,
+      email: users.email,
+      role: users.role,
+      roleId: users.roleId,
+      roleName: roles.name,
       isActive: users.isActive,
       salaryType: staffProfiles.salaryType,
       baseSalary: staffProfiles.baseSalary,
       hourlyRate: staffProfiles.hourlyRate,
     })
     .from(users)
+    .leftJoin(roles, eq(users.roleId, roles.id))
     .leftJoin(staffProfiles, eq(staffProfiles.userId, users.id))
     .where(
       and(
         eq(users.tenantId, tenantId),
-        inArray(users.role, ['manager', 'cashier', 'kitchen_staff', 'qr_scanner']),
         isNull(users.deletedAt)
       )
     );
@@ -130,7 +140,7 @@ export class StaffService {
   async registerStaff(tenantId: string, payload: {
     name: string;
     phone: string;
-    role: 'manager' | 'cashier' | 'kitchen_staff' | 'qr_scanner';
+    roleId: string;
     branchId?: string;
     salaryType?: 'HOURLY' | 'MONTHLY';
     baseSalary?: string;
@@ -140,7 +150,8 @@ export class StaffService {
     const [user] = await db.insert(users).values({
       name: payload.name,
       phone: payload.phone,
-      role: payload.role,
+      role: 'staff',
+      roleId: payload.roleId,
       branchId: payload.branchId,
       tenantId,
     }).returning();
@@ -172,7 +183,7 @@ export class StaffService {
   async updateStaff(tenantId: string, staffId: string, payload: {
     name?: string;
     phone?: string;
-    role?: 'manager' | 'cashier' | 'kitchen_staff' | 'qr_scanner';
+    roleId?: string;
     branchId?: string;
     isActive?: boolean;
     salaryType?: 'HOURLY' | 'MONTHLY';
@@ -180,18 +191,21 @@ export class StaffService {
     hourlyRate?: string;
   }) {
     // 1. Update user record
-    const [updatedUser] = await db
-      .update(users)
-      .set({
+    let updatedUser;
+    if (payload.name !== undefined || payload.phone !== undefined || payload.roleId !== undefined || payload.isActive !== undefined || payload.branchId !== undefined) {
+      const result = await db.update(users).set({
         name: payload.name,
         phone: payload.phone,
-        role: payload.role,
+        roleId: payload.roleId,
         branchId: payload.branchId,
         isActive: payload.isActive,
         updatedAt: new Date(),
-      })
-      .where(and(eq(users.id, staffId), eq(users.tenantId, tenantId)))
-      .returning();
+      }).where(and(eq(users.id, staffId), eq(users.tenantId, tenantId))).returning();
+      updatedUser = result[0];
+    } else {
+      const [u] = await db.select().from(users).where(and(eq(users.id, staffId), eq(users.tenantId, tenantId)));
+      updatedUser = u;
+    }
 
     if (!updatedUser) throw new Error('Staff member not found or unauthorized');
 
@@ -225,5 +239,46 @@ export class StaffService {
 
     return deleted;
   }
-}
 
+  /**
+   * Delete a custom role. System roles cannot be deleted.
+   */
+  async deleteRole(tenantId: string | null, roleId: string, requestingUser: any) {
+    if (requestingUser && requestingUser.role !== 'platform_owner' && requestingUser.role !== 'tenant_owner' && requestingUser.role !== 'super_admin') {
+      throw new Error('Only owners can delete roles');
+    }
+
+    const roleRecord = await db.query.roles.findFirst({
+      where: eq(roles.id, roleId)
+    });
+
+    if (!roleRecord) throw new Error('Role not found');
+    
+    // Cannot delete system roles unless it is a platform owner/super admin doing it globally (tenantId = null)
+    if (roleRecord.isSystem && tenantId !== null) {
+      throw new Error('System roles cannot be deleted. You can only modify their permissions.');
+    }
+
+    if (tenantId !== null && roleRecord.tenantId !== tenantId) {
+       throw new Error('You can only delete roles belonging to your tenant');
+    }
+
+    // Check if any users are assigned to this role
+    const usersWithRole = await db.select({ id: users.id }).from(users).where(eq(users.roleId, roleId)).limit(1);
+    if (usersWithRole.length > 0) {
+      throw new Error('Cannot delete role because it is currently assigned to one or more staff members. Please reassign them first.');
+    }
+
+    await db.transaction(async (tx) => {
+      // 1. Delete associated permissions
+      await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+      // 2. Delete the role
+      await tx.delete(roles).where(eq(roles.id, roleId));
+    });
+
+    const cacheKey = `rbac:permissions:roleId:${roleId}:${tenantId || 'system'}`;
+    import('../../shared/redis.ts').then(m => m.invalidateCache(cacheKey)).catch(e => console.error(e));
+
+    return { success: true };
+  }
+}
