@@ -48,15 +48,19 @@ export class CrmService {
   /**
    * Mock implementation of segments based on order frequency.
    */
-  async getSegments(tenantId: string, page: number = 1, limit: number = 10) {
+  async getSegments(tenantId: string, page: number = 1, limit: number = 10, search?: string) {
     // In a production app, these would be defined in a `segments` table.
     // We calculate counts dynamically based on order behavior.
-    const allSegments = [
+    let allSegments = [
       { id: 'seg1', name: 'At Risk Subscribers', ruleType: 'days_since_scan', ruleValue: '5', customerCount: 12 },
       { id: 'seg2', name: 'Highly Active Diners', ruleType: 'total_scans', ruleValue: '15', customerCount: 45 },
       { id: 'seg3', name: 'New Signups (30 Days)', ruleType: 'signup_days', ruleValue: '30', customerCount: 8 }
     ];
     
+    if (search) {
+      allSegments = allSegments.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+    }
+
     const offset = (page - 1) * limit;
     const data = allSegments.slice(offset, offset + limit);
 
@@ -66,7 +70,7 @@ export class CrmService {
         total: allSegments.length,
         page,
         limit,
-        totalPages: Math.ceil(allSegments.length / limit)
+        totalPages: Math.ceil(allSegments.length / limit) || 1
       }
     };
   }
@@ -74,11 +78,15 @@ export class CrmService {
   /**
    * Mock implementation of campaigns.
    */
-  async getCampaigns(tenantId: string, page: number = 1, limit: number = 10) {
-    const allCampaigns = [
+  async getCampaigns(tenantId: string, page: number = 1, limit: number = 10, search?: string) {
+    let allCampaigns = [
       { id: 'c1', title: '5-Day Inactive Promo', channel: 'whatsapp', status: 'SENT', sentCount: 14, sentAt: '2026-06-15T12:00:00Z' },
       { id: 'c2', title: 'Weekend Special Offer', channel: 'push', status: 'SCHEDULED', sentCount: 45, sentAt: '2026-06-20T10:00:00Z' }
     ];
+
+    if (search) {
+      allCampaigns = allCampaigns.filter(c => c.title.toLowerCase().includes(search.toLowerCase()));
+    }
 
     const offset = (page - 1) * limit;
     const data = allCampaigns.slice(offset, offset + limit);
@@ -89,7 +97,7 @@ export class CrmService {
         total: allCampaigns.length,
         page,
         limit,
-        totalPages: Math.ceil(allCampaigns.length / limit)
+        totalPages: Math.ceil(allCampaigns.length / limit) || 1
       }
     };
   }

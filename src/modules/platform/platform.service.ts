@@ -1,4 +1,4 @@
-import { eq, and, isNull, sql, desc } from 'drizzle-orm';
+import { eq, and, isNull, sql, desc, or, ilike } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
 import { tenants, branches, users, orders, auditLogs } from '../../db/schema/index.ts';
 
@@ -6,19 +6,31 @@ export class PlatformService {
   /**
    * List all tenants in the system along with user and branch counts.
    */
-  async listTenants(page: number = 1, limit: number = 12) {
+  async listTenants(page: number = 1, limit: number = 12, search?: string) {
     const offset = (page - 1) * limit;
+
+    let baseConditions = isNull(tenants.deletedAt);
+    if (search) {
+      baseConditions = and(
+        baseConditions,
+        or(
+          ilike(tenants.name, `%${search}%`),
+          ilike(tenants.slug, `%${search}%`),
+          ilike(tenants.email, `%${search}%`)
+        )
+      ) as any;
+    }
 
     const [totalRes] = await db
       .select({ count: sql<number>`count(*)` })
       .from(tenants)
-      .where(isNull(tenants.deletedAt));
+      .where(baseConditions);
     const total = Number(totalRes?.count || 0);
 
     const allTenants = await db
       .select()
       .from(tenants)
-      .where(isNull(tenants.deletedAt))
+      .where(baseConditions)
       .limit(limit)
       .offset(offset);
 
@@ -169,12 +181,23 @@ export class PlatformService {
   /**
    * Retrieve system-wide mutating logs.
    */
-  async getAuditLogs(page: number = 1, limit: number = 50) {
+  async getAuditLogs(page: number = 1, limit: number = 50, search?: string) {
     const offset = (page - 1) * limit;
+
+    let whereClause = undefined;
+    if (search) {
+      whereClause = or(
+        ilike(auditLogs.path, `%${search}%`),
+        ilike(users.name, `%${search}%`)
+      );
+    }
 
     const [totalRes] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(auditLogs);
+      .from(auditLogs)
+      .innerJoin(users, eq(auditLogs.userId, users.id))
+      .innerJoin(tenants, eq(auditLogs.tenantId, tenants.id))
+      .where(whereClause);
     const total = Number(totalRes?.count || 0);
 
     const data = await db
@@ -194,6 +217,7 @@ export class PlatformService {
       .from(auditLogs)
       .innerJoin(users, eq(auditLogs.userId, users.id))
       .innerJoin(tenants, eq(auditLogs.tenantId, tenants.id))
+      .where(whereClause)
       .orderBy(desc(auditLogs.createdAt))
       .limit(limit)
       .offset(offset);

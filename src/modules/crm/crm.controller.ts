@@ -71,12 +71,13 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
     if (!user || !user.tenantId) throw new Error('Unauthorized');
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 10;
-    const result = await crmService.getSegments(user.tenantId, page, limit);
+    const result = await crmService.getSegments(user.tenantId, page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   })
 
@@ -92,12 +93,13 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
     if (!user || !user.tenantId) throw new Error('Unauthorized');
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 10;
-    const result = await crmService.getCampaigns(user.tenantId, page, limit);
+    const result = await crmService.getCampaigns(user.tenantId, page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   })
 

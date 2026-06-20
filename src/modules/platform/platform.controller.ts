@@ -44,12 +44,13 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
   .get('/tenants', async ({ query }) => {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 12;
-    const result = await platformService.listTenants(page, limit);
+    const result = await platformService.listTenants(page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   })
 
@@ -116,11 +117,12 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
   .get('/audit-logs', async ({ query }) => {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 50;
-    const result = await platformService.getAuditLogs(page, limit);
+    const result = await platformService.getAuditLogs(page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   });

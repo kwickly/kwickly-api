@@ -1,4 +1,4 @@
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull, sql, ilike } from 'drizzle-orm';
 import { db } from '../../db';
 import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon } from '../../db/schema/menus';
 import { menuCategories, menuItems, menuItemAddons } from '../../db/schema/menus';
@@ -17,8 +17,8 @@ export class MenusService {
    * @param {string} branchId - The UUID of the specific branch.
    * @returns {Promise<Array<MenuCategory & { items: MenuItem[] }>>} A promise resolving to the nested menu tree.
    */
-  async getMenu(tenantId: string, branchId: string, page: number = 1, limit: number = 10) {
-    const cacheKey = `menu:tenant:${tenantId}:branch:${branchId}:page:${page}:limit:${limit}`;
+  async getMenu(tenantId: string, branchId: string, page: number = 1, limit: number = 10, search?: string) {
+    const cacheKey = `menu:tenant:${tenantId}:branch:${branchId}:page:${page}:limit:${limit}:search:${search || ''}`;
 
     return withCache(cacheKey, async () => {
       const offset = (page - 1) * limit;
@@ -49,15 +49,19 @@ export class MenusService {
         .offset(offset);
 
       // 2. Fetch items
+      let itemsConditions = and(
+        eq(menuItems.tenantId, tenantId),
+        eq(menuItems.isActive, true),
+        isNull(menuItems.deletedAt)
+      );
+
+      if (search) {
+        itemsConditions = and(itemsConditions, ilike(menuItems.name, `%${search}%`)) as any;
+      }
+
       const items = await db.select()
         .from(menuItems)
-        .where(
-          and(
-            eq(menuItems.tenantId, tenantId),
-            eq(menuItems.isActive, true),
-            isNull(menuItems.deletedAt)
-          )
-        );
+        .where(itemsConditions);
 
       // 3. Assemble nested structure
       const data = categories.map(category => ({
@@ -161,28 +165,27 @@ export class MenusService {
   /**
    * Fetches all active addons/modifiers for a specific tenant.
    */
-  async getAddons(tenantId: string, page: number = 1, limit: number = 10) {
+  async getAddons(tenantId: string, page: number = 1, limit: number = 10, search?: string) {
     const offset = (page - 1) * limit;
+
+    let conditions = and(
+      eq(menuItemAddons.tenantId, tenantId),
+      eq(menuItemAddons.isActive, true)
+    );
+
+    if (search) {
+      conditions = and(conditions, ilike(menuItemAddons.name, `%${search}%`)) as any;
+    }
 
     const [totalRes] = await db
       .select({ count: sql<number>`count(*)` })
       .from(menuItemAddons)
-      .where(
-        and(
-          eq(menuItemAddons.tenantId, tenantId),
-          eq(menuItemAddons.isActive, true)
-        )
-      );
+      .where(conditions);
     const total = Number(totalRes?.count || 0);
 
     const data = await db.select()
       .from(menuItemAddons)
-      .where(
-        and(
-          eq(menuItemAddons.tenantId, tenantId),
-          eq(menuItemAddons.isActive, true)
-        )
-      )
+      .where(conditions)
       .limit(limit)
       .offset(offset)
       .execute();

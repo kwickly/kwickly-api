@@ -23,12 +23,13 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     // In a real app, this endpoint might be totally public, but we filter by tenantId from auth for B2B portal usage here.
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 10;
-    const result = await menusService.getMenu(user!.tenantId!, branchId, page, limit);
+    const result = await menusService.getMenu(user!.tenantId!, branchId, page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   })
 
@@ -139,11 +140,12 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
   .get('/addons', async ({ user, query }) => {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 10;
-    const result = await menusService.getAddons(user!.tenantId!, page, limit);
+    const result = await menusService.getAddons(user!.tenantId!, page, limit, query.search);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
     })
   });
