@@ -144,4 +144,29 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
   .post('/logout', async ({ cookie }) => {
     cookie.auth_session.remove();
     return { success: true, message: 'Logged out successfully' };
+  })
+
+  // 5. Forgot Password
+  .post('/forgot-password', async ({ body }) => {
+    await authService.requestPasswordReset(body.email);
+    // Always return success to prevent email enumeration
+    return { success: true, message: 'If an account exists, a reset link has been sent to that email.' };
+  }, {
+    body: t.Object({ email: t.String() })
+  })
+
+  // 6. Reset Password
+  .post('/reset-password', async ({ body, set }) => {
+    try {
+      await authService.resetPassword(body.token, body.newPassword);
+      return { success: true, message: 'Password has been reset successfully. You can now login.' };
+    } catch (e: any) {
+      set.status = 400;
+      return { success: false, error: e.message };
+    }
+  }, {
+    body: t.Object({
+      token: t.String(),
+      newPassword: t.String()
+    })
   });

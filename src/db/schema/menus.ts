@@ -25,7 +25,6 @@ export const menuItemAvailabilityEnum = pgEnum('menu_item_availability', [
 export const menuCategories = pgTable('menu_categories', {
   id: uuid('id').defaultRandom().primaryKey(),
   tenantId:  uuid('tenant_id').notNull().references(() => tenants.id),
-  branchId:  uuid('branch_id').references(() => branches.id), // null = all branches
   name:      text('name').notNull(),
   imageUrl:  text('image_url'),
   sortOrder: integer('sort_order').default(0).notNull(),
@@ -33,7 +32,7 @@ export const menuCategories = pgTable('menu_categories', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
-  unqTenantBranchCategory: uniqueIndex('unq_cat_tenant_branch_name').on(table.tenantId, table.branchId, table.name),
+  unqTenantCategory: uniqueIndex('unq_cat_tenant_name').on(table.tenantId, table.name),
 }));
 
 // ─── Menu Items ──────────────────────────────────────────────────────────────

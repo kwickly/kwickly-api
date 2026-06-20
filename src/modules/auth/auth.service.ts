@@ -1,6 +1,7 @@
 import { eq, and, gt, desc, isNull } from 'drizzle-orm';
+import crypto from 'crypto';
 import { db } from '../../db';
-import { users, otpCodes, sessions, userRoleEnum, roles, rolePermissions, permissions, tenants } from '../../db/schema';
+import { users, otpCodes, sessions, userRoleEnum, roles, rolePermissions, permissions, tenants, passwordResetTokens } from '../../db/schema';
 
 export class AuthService {
   /**
@@ -210,5 +211,58 @@ export class AuthService {
       }, 
       session: sessionRecord 
     };
+  }
+
+  /**
+   * Generates a password reset token and "sends" an email.
+   */
+  async requestPasswordReset(email: string) {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    
+    // To prevent email enumeration, return immediately if user not found.
+    // The API response will look exactly the same either way.
+    if (!user) return;
+
+    // Generate a secure random token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Delete any existing tokens for this user to prevent spam
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
+
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    // Mock Email sending
+    console.log(`\n[MOCK EMAIL] Password Reset requested for ${email}`);
+    console.log(`[MOCK EMAIL] Link: http://localhost:5173/reset-password?token=${rawToken}\n`);
+  }
+
+  /**
+   * Verifies the token and updates the user's password.
+   */
+  async resetPassword(rawToken: string, newPassword: string) {
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const [tokenRecord] = await db.select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.tokenHash, tokenHash));
+
+    if (!tokenRecord || new Date() > tokenRecord.expiresAt) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    const hashedPassword = await Bun.password.hash(newPassword);
+
+    await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, tokenRecord.userId));
+
+    // Immediately invalidate the token
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.id, tokenRecord.id));
   }
 }

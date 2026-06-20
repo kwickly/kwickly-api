@@ -268,11 +268,10 @@ async function main() {
 
   // Mock Menu Categories & Items
   console.log('   - Menus & Categories...');
-  for (const branch of allBranches) {
-    if (!branch) continue;
+  for (const tenant of [...mockTenants, swamyTenant]) {
+    if (!tenant) continue;
     const categoryData = ['Starters', 'Main Course', 'Desserts', 'Beverages'].map((name, index) => ({
-      tenantId: branch.tenantId,
-      branchId: branch.id,
+      tenantId: tenant.id,
       name,
       sortOrder: index,
     }));
@@ -280,7 +279,7 @@ async function main() {
     const categories: schema.MenuCategory[] = [];
     for (const cat of categoryData) {
       const [insertedCat] = await db.insert(schema.menuCategories).values(cat).onConflictDoUpdate({
-        target: [schema.menuCategories.tenantId, schema.menuCategories.branchId, schema.menuCategories.name],
+        target: [schema.menuCategories.tenantId, schema.menuCategories.name],
         set: { sortOrder: cat.sortOrder }
       }).returning();
       if (insertedCat) categories.push(insertedCat);
@@ -288,7 +287,7 @@ async function main() {
 
     for (const cat of categories) {
       const itemData = Array.from({ length: 3 }).map((_, index) => ({
-        tenantId: branch.tenantId,
+        tenantId: tenant.id,
         categoryId: cat.id,
         name: faker.commerce.productName(),
         description: faker.commerce.productDescription(),
@@ -314,7 +313,7 @@ async function main() {
 
         await db.insert(schema.menuItemAddons).values(
           Array.from({ length: 2 }).map(() => ({
-            tenantId: branch.tenantId,
+            tenantId: tenant.id,
             menuItemId: item.id,
             name: 'Extra ' + faker.commerce.productAdjective(),
             price: faker.commerce.price({ min: 10, max: 50 }),
