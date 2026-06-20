@@ -1,11 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { HardwareService } from './hardware.service.ts';
-import { authPlugin } from '../auth/auth.guard.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
 
 const hardwareService = new HardwareService();
 
 export const hardwareController = new Elysia({ prefix: '/v1/hardware' })
-  .use(authPlugin)
+  .use(requireAuth)
 
   /**
    * GET /v1/hardware/receipts/:orderId

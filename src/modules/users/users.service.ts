@@ -56,4 +56,48 @@ export class UsersService {
 
     return staff;
   }
+
+  /**
+   * Fetches the personal profile for the authenticated user.
+   */
+  async getUserProfile(userId: string) {
+    const [user] = await db.select({
+      id: users.id,
+      name: users.name,
+      phone: users.phone,
+      email: users.email,
+      role: users.role,
+      avatarUrl: users.avatarUrl,
+      tenantId: users.tenantId,
+      branchId: users.branchId,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(and(eq(users.id, userId), isNull(users.deletedAt)));
+    
+    return user;
+  }
+
+  /**
+   * Updates the personal profile for the authenticated user.
+   */
+  async updateUserProfile(userId: string, data: { name?: string; phone?: string; avatarUrl?: string }) {
+    const [updatedUser] = await db.update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      avatarUrl: updatedUser.avatarUrl,
+    };
+  }
 }

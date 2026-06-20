@@ -31,6 +31,7 @@ import { staffController } from './modules/staff/staff.controller.ts';
 import { payrollController } from './modules/payroll/payroll.controller.ts';
 import { adsController } from './modules/ads/ads.controller.ts';
 import { notificationsController } from './modules/notifications/notifications.controller.ts';
+import { usersController } from './modules/users/users.controller.ts';
 
 export const app = new Elysia()
   .use(cors())
@@ -91,6 +92,7 @@ export const app = new Elysia()
       .use(authController)
       .use(platformController)
       .use(tenantController)
+      .use(usersController)
 
       // Register Phase 2 Modules
       .use(branchesController)

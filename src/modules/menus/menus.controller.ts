@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
 import { requirePermission } from '../auth/rbac.guard.ts';
 import { MenusService } from './menus.service.ts';
 
@@ -11,7 +11,7 @@ const menusService = new MenusService();
  * Base Path: /v1/menus
  */
 export const menusController = new Elysia({ prefix: '/v1/menus' })
-  .use(authPlugin)
+  .use(requireAuth)
 
   /**
    * GET /v1/menus/:branchId

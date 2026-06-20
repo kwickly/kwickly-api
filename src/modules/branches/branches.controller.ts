@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { authPlugin } from '../auth/auth.guard.ts';
+import { requireAuth } from '../auth/auth.guard.ts';
 import { requirePermission } from '../auth/rbac.guard.ts';
 import { BranchesService } from './branches.service.ts';
 
@@ -11,7 +11,7 @@ const branchesService = new BranchesService();
  * Base Path: /v1/branches
  */
 export const branchesController = new Elysia({ prefix: '/v1/branches' })
-  .use(authPlugin)
+  .use(requireAuth)
 
   /**
    * GET /v1/branches
