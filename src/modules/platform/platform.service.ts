@@ -6,8 +6,21 @@ export class PlatformService {
   /**
    * List all tenants in the system along with user and branch counts.
    */
-  async listTenants() {
-    const allTenants = await db.select().from(tenants).where(isNull(tenants.deletedAt));
+  async listTenants(page: number = 1, limit: number = 12) {
+    const offset = (page - 1) * limit;
+
+    const [totalRes] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tenants)
+      .where(isNull(tenants.deletedAt));
+    const total = Number(totalRes?.count || 0);
+
+    const allTenants = await db
+      .select()
+      .from(tenants)
+      .where(isNull(tenants.deletedAt))
+      .limit(limit)
+      .offset(offset);
 
     const result = [];
     for (const t of allTenants) {
@@ -30,7 +43,15 @@ export class PlatformService {
       });
     }
 
-    return result;
+    return {
+      data: result,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    };
   }
 
   /**
@@ -148,8 +169,15 @@ export class PlatformService {
   /**
    * Retrieve system-wide mutating logs.
    */
-  async getAuditLogs() {
-    return await db
+  async getAuditLogs(page: number = 1, limit: number = 50) {
+    const offset = (page - 1) * limit;
+
+    const [totalRes] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(auditLogs);
+    const total = Number(totalRes?.count || 0);
+
+    const data = await db
       .select({
         id: auditLogs.id,
         method: auditLogs.method,
@@ -167,6 +195,17 @@ export class PlatformService {
       .innerJoin(users, eq(auditLogs.userId, users.id))
       .innerJoin(tenants, eq(auditLogs.tenantId, tenants.id))
       .orderBy(desc(auditLogs.createdAt))
-      .limit(50);
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    };
   }
 }

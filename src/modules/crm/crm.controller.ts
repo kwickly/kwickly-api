@@ -31,10 +31,17 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
   // Managers and Admins can view and adjust all customers
   .use(requirePermission('crm:manage'))
 
-  .get('/customers', async ({ user }) => {
+  .get('/customers', async ({ user, query }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');
-    const customers = await crmService.getCustomers(user.tenantId);
-    return { success: true, data: customers };
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const result = await crmService.getCustomers(user.tenantId, page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   })
 
   .get('/customers/:id', async ({ user, params }) => {
@@ -60,10 +67,17 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
     })
   })
 
-  .get('/segments', async ({ user }) => {
+  .get('/segments', async ({ user, query }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');
-    const segments = await crmService.getSegments(user.tenantId);
-    return { success: true, data: segments };
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const result = await crmService.getSegments(user.tenantId, page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   })
 
   .post('/segments', async ({ user, body }) => {
@@ -74,10 +88,17 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
     };
   })
 
-  .get('/campaigns', async ({ user }) => {
+  .get('/campaigns', async ({ user, query }) => {
     if (!user || !user.tenantId) throw new Error('Unauthorized');
-    const campaigns = await crmService.getCampaigns(user.tenantId);
-    return { success: true, data: campaigns };
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const result = await crmService.getCampaigns(user.tenantId, page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   })
 
   .post('/campaigns', async ({ body }) => {

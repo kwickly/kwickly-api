@@ -41,9 +41,16 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
    * GET /v1/platform/tenants
    * Retrieve all tenants.
    */
-  .get('/tenants', async () => {
-    const data = await platformService.listTenants();
-    return { success: true, data };
+  .get('/tenants', async ({ query }) => {
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 12;
+    const result = await platformService.listTenants(page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   })
 
   /**
@@ -106,7 +113,14 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
    * GET /v1/platform/audit-logs
    * Retrieve chronological system mutation audit logs.
    */
-  .get('/audit-logs', async () => {
-    const data = await platformService.getAuditLogs();
-    return { success: true, data };
+  .get('/audit-logs', async ({ query }) => {
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 50;
+    const result = await platformService.getAuditLogs(page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   });

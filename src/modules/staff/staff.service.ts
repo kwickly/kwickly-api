@@ -74,6 +74,8 @@ export class StaffService {
         }).returning();
         forkedRole = newRole;
       }
+
+      if (!forkedRole) throw new Error('Failed to fork role');
       targetRoleId = forkedRole.id;
     }
 

@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon } from '../../db/schema/menus';
 import { menuCategories, menuItems, menuItemAddons } from '../../db/schema/menus';
@@ -17,10 +17,23 @@ export class MenusService {
    * @param {string} branchId - The UUID of the specific branch.
    * @returns {Promise<Array<MenuCategory & { items: MenuItem[] }>>} A promise resolving to the nested menu tree.
    */
-  async getMenu(tenantId: string, branchId: string) {
-    const cacheKey = `menu:tenant:${tenantId}:branch:${branchId}`;
+  async getMenu(tenantId: string, branchId: string, page: number = 1, limit: number = 10) {
+    const cacheKey = `menu:tenant:${tenantId}:branch:${branchId}:page:${page}:limit:${limit}`;
 
     return withCache(cacheKey, async () => {
+      const offset = (page - 1) * limit;
+
+      const [totalRes] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(menuCategories)
+        .where(
+          and(
+            eq(menuCategories.tenantId, tenantId),
+            eq(menuCategories.isActive, true)
+          )
+        );
+      const total = Number(totalRes?.count || 0);
+
       // 1. Fetch categories
       const categories = await db.select()
         .from(menuCategories)
@@ -31,7 +44,9 @@ export class MenusService {
             // In a real app we might use 'or' logic, for simplicity we assume global here
             eq(menuCategories.isActive, true)
           )
-        );
+        )
+        .limit(limit)
+        .offset(offset);
 
       // 2. Fetch items
       const items = await db.select()
@@ -45,10 +60,20 @@ export class MenusService {
         );
 
       // 3. Assemble nested structure
-      return categories.map(category => ({
+      const data = categories.map(category => ({
         ...category,
         items: items.filter(i => i.categoryId === category.id)
       }));
+
+      return {
+        data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
     }, 24 * 3600); // Cache for 24 hours
   }
 
@@ -136,8 +161,21 @@ export class MenusService {
   /**
    * Fetches all active addons/modifiers for a specific tenant.
    */
-  async getAddons(tenantId: string) {
-    return await db.select()
+  async getAddons(tenantId: string, page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+
+    const [totalRes] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(menuItemAddons)
+      .where(
+        and(
+          eq(menuItemAddons.tenantId, tenantId),
+          eq(menuItemAddons.isActive, true)
+        )
+      );
+    const total = Number(totalRes?.count || 0);
+
+    const data = await db.select()
       .from(menuItemAddons)
       .where(
         and(
@@ -145,7 +183,19 @@ export class MenusService {
           eq(menuItemAddons.isActive, true)
         )
       )
+      .limit(limit)
+      .offset(offset)
       .execute();
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   /**
@@ -168,7 +218,7 @@ export class MenusService {
     await db.transaction(async (tx) => {
       await tx
         .update(menuItems)
-        .set({ categoryId: null })
+        .set({ categoryId: null as any })
         .where(and(eq(menuItems.categoryId, id), eq(menuItems.tenantId, tenantId)));
 
       await tx

@@ -8,8 +8,16 @@ export class CrmService {
   /**
    * Fetch all customers for a tenant with their core profile and loyalty points.
    */
-  async getCustomers(tenantId: string) {
-    return await db
+  async getCustomers(tenantId: string, page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+
+    const [totalRes] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(eq(users.tenantId, tenantId), eq(users.role, 'customer')));
+    const total = Number(totalRes?.count || 0);
+
+    const data = await db
       .select({
         id: users.id,
         name: users.name,
@@ -22,30 +30,68 @@ export class CrmService {
       .leftJoin(loyaltyLedgers, eq(users.id, loyaltyLedgers.userId))
       .where(and(eq(users.tenantId, tenantId), eq(users.role, 'customer')))
       .groupBy(users.id)
+      .limit(limit)
+      .offset(offset)
       .execute();
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   /**
    * Mock implementation of segments based on order frequency.
    */
-  async getSegments(tenantId: string) {
+  async getSegments(tenantId: string, page: number = 1, limit: number = 10) {
     // In a production app, these would be defined in a `segments` table.
     // We calculate counts dynamically based on order behavior.
-    return [
+    const allSegments = [
       { id: 'seg1', name: 'At Risk Subscribers', ruleType: 'days_since_scan', ruleValue: '5', customerCount: 12 },
       { id: 'seg2', name: 'Highly Active Diners', ruleType: 'total_scans', ruleValue: '15', customerCount: 45 },
       { id: 'seg3', name: 'New Signups (30 Days)', ruleType: 'signup_days', ruleValue: '30', customerCount: 8 }
     ];
+    
+    const offset = (page - 1) * limit;
+    const data = allSegments.slice(offset, offset + limit);
+
+    return {
+      data,
+      meta: {
+        total: allSegments.length,
+        page,
+        limit,
+        totalPages: Math.ceil(allSegments.length / limit)
+      }
+    };
   }
 
   /**
    * Mock implementation of campaigns.
    */
-  async getCampaigns(tenantId: string) {
-    return [
+  async getCampaigns(tenantId: string, page: number = 1, limit: number = 10) {
+    const allCampaigns = [
       { id: 'c1', title: '5-Day Inactive Promo', channel: 'whatsapp', status: 'SENT', sentCount: 14, sentAt: '2026-06-15T12:00:00Z' },
       { id: 'c2', title: 'Weekend Special Offer', channel: 'push', status: 'SCHEDULED', sentCount: 45, sentAt: '2026-06-20T10:00:00Z' }
     ];
+
+    const offset = (page - 1) * limit;
+    const data = allCampaigns.slice(offset, offset + limit);
+
+    return {
+      data,
+      meta: {
+        total: allCampaigns.length,
+        page,
+        limit,
+        totalPages: Math.ceil(allCampaigns.length / limit)
+      }
+    };
   }
 
   /**

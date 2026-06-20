@@ -19,10 +19,17 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
    * Note: We use auth tenantId here for the B2B portal preview, but in production for customers, 
    * tenantId might be inferred from the branchId directly.
    */
-  .get('/:branchId', async ({ params: { branchId }, user }) => {
+  .get('/:branchId', async ({ params: { branchId }, user, query }) => {
     // In a real app, this endpoint might be totally public, but we filter by tenantId from auth for B2B portal usage here.
-    const data = await menusService.getMenu(user!.tenantId!, branchId);
-    return { success: true, data };
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const result = await menusService.getMenu(user!.tenantId!, branchId, page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   })
 
   .use(requirePermission('menu:write'))
@@ -129,7 +136,14 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
    * GET /v1/menus/addons
    * Fetches all addons/modifiers for a specific tenant.
    */
-  .get('/addons', async ({ user }) => {
-    const data = await menusService.getAddons(user!.tenantId!);
-    return { success: true, data };
+  .get('/addons', async ({ user, query }) => {
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const result = await menusService.getAddons(user!.tenantId!, page, limit);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+    })
   });
