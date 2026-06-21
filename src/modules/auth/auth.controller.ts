@@ -172,4 +172,32 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       token: t.String(),
       newPassword: t.String()
     })
+  })
+  
+  // 7. Update Profile (Protected)
+  .use(authPlugin)
+  .patch('/profile', async ({ body, user, set }) => {
+    if (!user) {
+      set.status = 401;
+      return { success: false, error: 'Unauthorized' };
+    }
+    try {
+      const updatedUser = await authService.updateProfile(user.sub, {
+        name: body.name,
+        phone: body.phone
+      });
+      return { success: true, user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        phone: updatedUser.phone
+      } };
+    } catch (e: any) {
+      set.status = 400;
+      return { success: false, error: e.message };
+    }
+  }, {
+    body: t.Object({
+      name: t.Optional(t.String()),
+      phone: t.Optional(t.String())
+    })
   });

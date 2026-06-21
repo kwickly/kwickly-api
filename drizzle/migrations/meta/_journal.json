@@ -57,6 +57,13 @@
       "when": 1781987880075,
       "tag": "0007_wakeful_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782041483011,
+      "tag": "0008_glorious_salo",
+      "breakpoints": true
     }
   ]
 }

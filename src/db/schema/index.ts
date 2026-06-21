@@ -21,3 +21,4 @@ export * from './payments.ts';
 export * from './auditLogs.ts';
 export * from './ads.ts';
 export * from './notifications.ts';
+export * from './support.ts';

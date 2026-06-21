@@ -265,4 +265,20 @@ export class AuthService {
     // Immediately invalidate the token
     await db.delete(passwordResetTokens).where(eq(passwordResetTokens.id, tokenRecord.id));
   }
+
+  /**
+   * Updates basic profile information.
+   */
+  async updateProfile(userId: string, data: { name?: string; phone?: string }) {
+    const [updatedUser] = await db.update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+    
+    return updatedUser;
+  }
 }

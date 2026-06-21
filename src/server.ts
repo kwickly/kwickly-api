@@ -33,6 +33,8 @@ import { payrollController } from './modules/payroll/payroll.controller.ts';
 import { adsController } from './modules/ads/ads.controller.ts';
 import { notificationsController } from './modules/notifications/notifications.controller.ts';
 import { usersController } from './modules/users/users.controller.ts';
+import { supportController } from './modules/support/support.controller.ts';
+import { platformSupportController } from './modules/support/platform-support.controller.ts';
 
 export const app = new Elysia()
   .use(cors())
@@ -118,6 +120,8 @@ export const app = new Elysia()
       .use(payrollController)
       .use(adsController)
       .use(notificationsController)
+      .use(supportController)
+      .use(platformSupportController)
   )
   
   .use(websocketPlugin);

@@ -141,3 +141,18 @@ This phase ensures all endpoints are rigorously tested to prevent regressions.
 *   [x] Set up `bun:test` in `package.json`.
 *   [x] Write E2E integration tests for `auth.controller` (OTP, Login).
 *   [x] Write E2E integration tests for `orders.controller` (Order Placement, Cart calculation).
+
+---
+
+## ✅ Phase 9: Support Tickets & User Profile (COMPLETED)
+
+This phase introduced robust multi-tenant support tracking and user profile management capabilities.
+
+*   [x] **Support Tickets API:**
+    *   `GET /v1/support/tickets`: List support tickets (tenant context).
+    *   `POST /v1/support/tickets`: Create new support ticket.
+    *   `GET /v1/support/platform/tickets`: Global inbox for platform owners.
+    *   Implemented `support_tickets` and `ticket_messages` schemas with proper dual-controller routing (`support.controller.ts` & `support-platform.controller.ts`).
+*   [x] **User Profile Management:**
+    *   `PATCH /v1/auth/profile`: Protected endpoint for updating basic user details (Name, Phone).
+    *   Updated `AuthService.updateProfile` logic.
