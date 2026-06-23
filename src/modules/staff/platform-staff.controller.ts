@@ -1,9 +1,11 @@
 import { Elysia, t } from 'elysia';
 import { StaffService } from './staff.service.ts';
+import { PlatformService } from '../platform/platform.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { checkPermission } from '../auth/rbac.guard.ts';
 
 const staffService = new StaffService();
+const platformService = new PlatformService();
 
 export const platformStaffController = new Elysia({ prefix: '/v1/platform/staff' })
   .use(requireAuth)
@@ -14,6 +16,11 @@ export const platformStaffController = new Elysia({ prefix: '/v1/platform/staff'
       set.status = 403;
       return { success: false, error: 'Platform admin access required' };
     }
+  })
+
+  .get('', async () => {
+    const data = await platformService.getPlatformStaff();
+    return { success: true, data };
   })
 
   .get('/roles', async ({ set }) => {

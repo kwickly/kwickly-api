@@ -125,13 +125,4 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
     })
-  })
-
-  /**
-   * GET /v1/platform/staff
-   * Retrieve platform staff (super_admins and platform_owners).
-   */
-  .get('/staff', async () => {
-    const data = await platformService.getPlatformStaff();
-    return { success: true, data };
   });
