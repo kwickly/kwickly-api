@@ -28,8 +28,10 @@ export const tenants = pgTable('tenants', {
   phone:       text('phone'),
   email:       text('email'),
   address:     text('address'),
+  baseCurrency: text('base_currency').default('INR').notNull(),
   plan:        tenantPlanEnum('plan').default('FREE').notNull(),
   isActive:    boolean('is_active').default(true).notNull(),
+  annualPaidLeaveLimit: text('annual_paid_leave_limit').default('15').notNull(),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
   deletedAt:   timestamp('deleted_at'), // soft delete

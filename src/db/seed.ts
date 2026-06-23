@@ -73,6 +73,7 @@ async function main() {
     { name: 'Manage Settings', slug: 'settings:manage', description: 'Can update branch/tenant settings' },
     // Attendance & Payroll
     { name: 'Manage Attendance', slug: 'attendance:manage', description: 'Can view and edit staff attendance' },
+    { name: 'View Payroll', slug: 'payroll:view', description: 'Can view payroll history and slips' },
     { name: 'Manage Payroll', slug: 'payroll:manage', description: 'Can process payroll and salary slips' },
     // CRM & Promotions
     { name: 'Manage CRM', slug: 'crm:manage', description: 'Can view and manage customer data' },
@@ -127,7 +128,7 @@ async function main() {
 
   // Branch Manager permissions
   const managerPermissions = seededPermissions.filter(p => 
-    ['menu:read', 'menu:write', 'orders:read', 'orders:write', 'staff:read', 'analytics:read', 'inventory:read', 'inventory:write', 'billing:manage'].includes(p.slug)
+    ['menu:read', 'menu:write', 'orders:read', 'orders:write', 'staff:read', 'analytics:read', 'inventory:read', 'inventory:write', 'billing:manage', 'payroll:manage', 'payroll:view', 'attendance:manage'].includes(p.slug)
   ).map(p => p.id);
   
   if (seededRoles['manager']) {
@@ -517,6 +518,93 @@ async function main() {
         reviewerNotes,
         reviewedAt: status !== 'PENDING' ? faker.date.recent({ days: 1 }) : null,
       });
+    }
+  }
+  // Mock Leaves & Holidays
+  console.log('   - Leaves & Holidays...');
+  for (const tenant of [...mockTenants, swamyTenant]) {
+    if (!tenant) continue;
+    
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    const endOfMonth = new Date(startOfMonth.getTime());
+    endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0);
+
+    const holidayDate = new Date(startOfMonth.getTime() + 5 * 86400000); // 5th of month
+
+    await db.insert(schema.publicHolidays).values({
+      tenantId: tenant.id,
+      name: 'Sample Public Holiday',
+      date: holidayDate.toISOString().split('T')[0]
+    }).onConflictDoNothing();
+
+    const tenantStaff = allStaff.filter(s => s.tenantId === tenant.id);
+    if (tenantStaff.length > 0) {
+      const leaveStart = new Date(startOfMonth.getTime() + 10 * 86400000); // 10th
+      const leaveEnd = new Date(startOfMonth.getTime() + 12 * 86400000); // 12th
+      
+      await db.insert(schema.staffLeaves).values({
+        tenantId: tenant.id,
+        staffId: tenantStaff[0].id,
+        leaveType: 'UNPAID',
+        startDate: leaveStart.toISOString().split('T')[0],
+        endDate: leaveEnd.toISOString().split('T')[0],
+        status: 'APPROVED'
+      });
+    }
+  }
+
+  // Mock Payroll Runs
+  console.log('   - Payroll & Salary Slips...');
+  for (const tenant of [...mockTenants, swamyTenant]) {
+    if (!tenant) continue;
+    
+    // Create a draft payroll run for current month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    const endOfMonth = new Date(startOfMonth.getTime());
+    endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0);
+
+    const [run] = await db.insert(schema.payrollRuns).values({
+      tenantId: tenant.id,
+      periodStartDate: startOfMonth.toISOString().split('T')[0],
+      periodEndDate: endOfMonth.toISOString().split('T')[0],
+      status: 'DRAFT',
+    }).onConflictDoUpdate({
+      target: [schema.payrollRuns.tenantId, schema.payrollRuns.periodStartDate, schema.payrollRuns.periodEndDate],
+      set: { status: 'DRAFT' }
+    }).returning();
+
+    if (run) {
+      const tenantStaff = allStaff.filter(s => s.tenantId === tenant.id);
+      for (const staff of tenantStaff) {
+        const base = faker.number.float({ min: 1000, max: 5000 });
+        const ot = faker.number.float({ min: 0, max: 500 });
+        const bonus = faker.datatype.boolean() ? faker.number.float({ min: 100, max: 300 }) : 0;
+        const net = base + ot + bonus;
+
+        await db.insert(schema.salarySlips).values({
+          tenantId: tenant.id,
+          payrollRunId: run.id,
+          staffId: staff.id,
+          baseAmount: base.toFixed(2),
+          overtimeAmount: ot.toFixed(2),
+          bonus: bonus.toFixed(2),
+          deductions: '0.00',
+          netPayable: net.toFixed(2),
+          status: 'DRAFT'
+        }).onConflictDoUpdate({
+          target: [schema.salarySlips.payrollRunId, schema.salarySlips.staffId],
+          set: {
+            baseAmount: base.toFixed(2),
+            overtimeAmount: ot.toFixed(2),
+            bonus: bonus.toFixed(2),
+            netPayable: net.toFixed(2)
+          }
+        });
+      }
     }
   }
 

@@ -84,6 +84,22 @@ export const staffLeaves = pgTable('staff_leaves', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+/**
+ * Public Holidays
+ */
+export const publicHolidays = pgTable('public_holidays', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  date: date('date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueHoliday: uniqueIndex('unique_tenant_holiday').on(table.tenantId, table.date),
+}));
+
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const staffProfilesRelations = relations(staffProfiles, ({ one }) => ({
   tenant: one(tenants, { fields: [staffProfiles.tenantId], references: [tenants.id] }),

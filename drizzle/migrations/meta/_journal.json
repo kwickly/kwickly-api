@@ -85,6 +85,20 @@
       "when": 1782239864148,
       "tag": "0011_odd_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782242801299,
+      "tag": "0012_known_madame_web",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1782243645913,
+      "tag": "0013_right_leech",
+      "breakpoints": true
     }
   ]
 }

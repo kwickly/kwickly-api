@@ -5,6 +5,7 @@ import {
   decimal,
   pgEnum,
   date,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
@@ -28,7 +29,9 @@ export const payrollRuns = pgTable('payroll_runs', {
   status: payrollStatusEnum('status').default('DRAFT').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  uniquePeriod: uniqueIndex('unique_payroll_period').on(table.tenantId, table.periodStartDate, table.periodEndDate),
+}));
 
 /**
  * Salary Slips (Individual staff payslips for a payroll run)
@@ -52,7 +55,9 @@ export const salarySlips = pgTable('salary_slips', {
   status: payrollStatusEnum('status').default('DRAFT').notNull(), // Can be PAID individually
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueSlip: uniqueIndex('unique_salary_slip').on(table.payrollRunId, table.staffId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const payrollRunsRelations = relations(payrollRuns, ({ one, many }) => ({

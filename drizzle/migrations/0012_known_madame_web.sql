@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "unique_payroll_period" ON "payroll_runs" USING btree ("tenant_id","period_start_date","period_end_date");--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_salary_slip" ON "salary_slips" USING btree ("payroll_run_id","staff_id");

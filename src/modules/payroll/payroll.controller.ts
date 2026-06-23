@@ -10,8 +10,11 @@ export const payrollController = new Elysia({ prefix: '/v1/payroll' })
   .use(requirePermission('payroll:manage'))
 
   // List payroll runs
-  .get('/', async ({ user }) => {
-    if (!user || !user.tenantId) throw new Error('Unauthorized');
+  .get('/', async ({ user, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 401;
+      return { success: false, message: 'Unauthorized: Tenant context missing' };
+    }
     const data = await payrollService.getPayrollRuns(user.tenantId);
     return { success: true, data };
   })
@@ -23,10 +26,18 @@ export const payrollController = new Elysia({ prefix: '/v1/payroll' })
   })
 
   // Generate new run
-  .post('/run', async ({ user, body }) => {
-    if (!user || !user.tenantId) throw new Error('Unauthorized');
-    const data = await payrollService.generatePayroll(user.tenantId, body);
-    return { success: true, data };
+  .post('/run', async ({ user, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 401;
+      return { success: false, message: 'Unauthorized: Tenant context missing' };
+    }
+    try {
+      const data = await payrollService.generatePayroll(user.tenantId, body);
+      return { success: true, data };
+    } catch (e: any) {
+      console.error('Payroll generation error:', e);
+      return new Response(JSON.stringify({ success: false, message: e.message }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
   }, {
     body: t.Object({
       periodStartDate: t.String(),

@@ -1,7 +1,7 @@
 import { eq, and, isNull, between, sql } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
 import { payrollRuns, salarySlips } from '../../db/schema/payroll.ts';
-import { staffProfiles } from '../../db/schema/staff.ts';
+import { staffProfiles, publicHolidays, staffLeaves } from '../../db/schema/staff.ts';
 import { timesheets } from '../../db/schema/timesheets.ts';
 
 export class PayrollService {
@@ -45,102 +45,171 @@ export class PayrollService {
     periodStartDate: string;
     periodEndDate: string;
   }) {
-    return await db.transaction(async (tx) => {
-      // 1. Create payroll run
-      const [run] = await tx
-        .insert(payrollRuns)
-        .values({
-          tenantId,
-          periodStartDate: payload.periodStartDate,
-          periodEndDate: payload.periodEndDate,
-          status: 'DRAFT'
-        })
-        .returning();
-
-      if (!run) throw new Error('Failed to create payroll run');
-
-      // 2. Find all active staff
-      const staffList = await tx
-        .select()
-        .from(staffProfiles)
-        .where(and(eq(staffProfiles.tenantId, tenantId), isNull(staffProfiles.deletedAt)))
-        .execute();
-
-      // 3. Fetch all approved timesheets for the period
-      const allTimesheets = await tx
-        .select()
-        .from(timesheets)
-        .where(
-          and(
-            eq(timesheets.tenantId, tenantId),
-            eq(timesheets.status, 'APPROVED'),
-            between(timesheets.clockIn, new Date(payload.periodStartDate), new Date(new Date(payload.periodEndDate).getTime() + 86400000))
-          )
-        )
-        .execute();
-
-      // Group by staffId
-      const tsByStaff = allTimesheets.reduce((acc, ts) => {
-        if (!acc[ts.staffId]) acc[ts.staffId] = [];
-        acc[ts.staffId].push(ts);
-        return acc;
-      }, {} as Record<string, typeof allTimesheets>);
-
-      const slipsData = [];
-
-      // 4. Calculate salary for each staff
-      for (const staff of staffList) {
-        const staffTs = tsByStaff[staff.userId] || [];
-        
-        let standardHours = 0;
-        let overtimeHours = 0;
-
-        staffTs.forEach(ts => {
-          if (ts.totalHours) {
-            const h = Number(ts.totalHours);
-            if (h > 8) {
-              standardHours += 8;
-              overtimeHours += (h - 8);
-            } else {
-              standardHours += h;
-            }
-          }
-        });
-
-        let baseAmount = 0;
-        let overtimeAmount = 0;
-        const rate = parseFloat(staff.hourlyRate || '0');
-
-        if (staff.salaryType === 'MONTHLY') {
-          baseAmount = parseFloat(staff.baseSalary || '0');
-          // For salaried, overtime is still paid at standard rate unless otherwise specified
-          overtimeAmount = overtimeHours * rate;
-        } else if (staff.salaryType === 'HOURLY') {
-          baseAmount = standardHours * rate;
-          overtimeAmount = overtimeHours * rate * 1.5; // Overtime is 1.5x
-        }
-
-        const netPayable = baseAmount + overtimeAmount;
-
-        slipsData.push({
-          tenantId,
-          payrollRunId: run.id,
-          staffId: staff.userId,
-          baseAmount: baseAmount.toFixed(2),
-          overtimeAmount: overtimeAmount.toFixed(2),
-          deductions: '0.00',
-          bonus: '0.00',
-          netPayable: netPayable.toFixed(2),
-          status: 'DRAFT' as const
-        });
-      }
-
-      if (slipsData.length > 0) {
-        await tx.insert(salarySlips).values(slipsData).execute();
-      }
-
-      return run;
+    // 0. Check if a run already exists for this period
+    const existingRun = await db.query.payrollRuns.findFirst({
+      where: and(
+        eq(payrollRuns.tenantId, tenantId),
+        eq(payrollRuns.periodStartDate, payload.periodStartDate),
+        eq(payrollRuns.periodEndDate, payload.periodEndDate)
+      )
     });
+
+    if (existingRun) {
+      throw new Error('A payroll run for this exact period already exists.');
+    }
+
+    // 1. Create payroll run
+    const [run] = await db
+      .insert(payrollRuns)
+      .values({
+        tenantId,
+        periodStartDate: payload.periodStartDate,
+        periodEndDate: payload.periodEndDate,
+        status: 'DRAFT'
+      })
+      .returning();
+
+    if (!run) throw new Error('Failed to create payroll run');
+
+    // 2. Find all active staff
+    const staffList = await db
+      .select()
+      .from(staffProfiles)
+      .where(and(eq(staffProfiles.tenantId, tenantId), isNull(staffProfiles.deletedAt)))
+      .execute();
+
+    // 3. Fetch all approved timesheets for the period
+    const periodStart = new Date(payload.periodStartDate);
+    const periodEnd = new Date(new Date(payload.periodEndDate).getTime() + 86400000); // include last day
+
+    const allTimesheets = await db
+      .select()
+      .from(timesheets)
+      .where(
+        and(
+          eq(timesheets.tenantId, tenantId),
+          eq(timesheets.status, 'APPROVED'),
+          between(timesheets.clockIn, periodStart, periodEnd)
+        )
+      )
+      .execute();
+
+    // 3a. Fetch Public Holidays
+    const holidays = await db.select().from(publicHolidays)
+      .where(
+        and(
+          eq(publicHolidays.tenantId, tenantId),
+          between(publicHolidays.date, payload.periodStartDate, payload.periodEndDate)
+        )
+      ).execute();
+    const holidayDates = new Set(holidays.map(h => h.date));
+
+    // 3b. Fetch Unpaid Leaves
+    const unpaidLeaves = await db.select().from(staffLeaves)
+      .where(
+        and(
+          eq(staffLeaves.tenantId, tenantId),
+          eq(staffLeaves.status, 'APPROVED'),
+          eq(staffLeaves.leaveType, 'UNPAID'),
+          between(staffLeaves.startDate, payload.periodStartDate, payload.periodEndDate)
+        )
+      ).execute();
+
+    const leavesByStaff = unpaidLeaves.reduce((acc, l) => {
+      if (!acc[l.staffId]) acc[l.staffId] = 0;
+      const start = new Date(l.startDate);
+      const end = new Date(l.endDate);
+      const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      acc[l.staffId] += diffDays;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Group by staffId
+    const tsByStaff = allTimesheets.reduce((acc, ts) => {
+      if (!acc[ts.staffId]) acc[ts.staffId] = [];
+      acc[ts.staffId].push(ts);
+      return acc;
+    }, {} as Record<string, typeof allTimesheets>);
+
+    const slipsData = [];
+
+    // 4. Calculate salary for each staff
+    for (const staff of staffList) {
+      const staffTs = tsByStaff[staff.userId] || [];
+      
+      let standardHours = 0;
+      let overtimeHours = 0;
+      let holidayPremiumHours = 0;
+      let workedOnHoliday = false;
+
+      staffTs.forEach(ts => {
+        if (ts.totalHours) {
+          const h = Number(ts.totalHours);
+          const tsDateStr = ts.clockIn.toISOString().split('T')[0];
+          const isHoliday = holidayDates.has(tsDateStr);
+          
+          if (isHoliday) {
+            workedOnHoliday = true;
+            holidayPremiumHours += h;
+          }
+
+          if (h > 8) {
+            standardHours += 8;
+            overtimeHours += (h - 8);
+          } else {
+            standardHours += h;
+          }
+        }
+      });
+
+      let baseAmount = 0;
+      let overtimeAmount = 0;
+      let deductionsAmount = 0;
+      let bonusAmount = 0;
+      const rate = parseFloat(staff.hourlyRate || '0');
+      const unpaidLeaveDays = leavesByStaff[staff.userId] || 0;
+
+      if (staff.salaryType === 'MONTHLY') {
+        baseAmount = parseFloat(staff.baseSalary || '0');
+        // Deduct base pay for unpaid leaves
+        const perDayRate = baseAmount / 30; // Assuming 30-day standardized month
+        deductionsAmount = perDayRate * unpaidLeaveDays;
+        
+        overtimeAmount = overtimeHours * rate;
+        // Holiday bonus: Extra day's pay
+        if (workedOnHoliday) {
+          bonusAmount += perDayRate;
+        }
+      } else if (staff.salaryType === 'HOURLY') {
+        baseAmount = standardHours * rate;
+        overtimeAmount = overtimeHours * rate * 1.5; // Overtime is 1.5x
+        // Holiday bonus: Extra 0.5x for all hours worked on holiday (making it 1.5x total base)
+        if (workedOnHoliday) {
+          bonusAmount += (holidayPremiumHours * rate * 0.5);
+        }
+        // Hourly staff don't get deductions for unpaid leaves because they just don't clock in.
+      }
+
+      const netPayable = baseAmount + overtimeAmount + bonusAmount - deductionsAmount;
+
+      slipsData.push({
+        tenantId,
+        payrollRunId: run.id,
+        staffId: staff.userId,
+        baseAmount: baseAmount.toFixed(2),
+        overtimeAmount: overtimeAmount.toFixed(2),
+        deductions: deductionsAmount.toFixed(2),
+        bonus: bonusAmount.toFixed(2),
+        netPayable: netPayable.toFixed(2),
+        status: 'DRAFT' as const
+      });
+    }
+
+    if (slipsData.length > 0) {
+      await db.insert(salarySlips).values(slipsData).execute();
+    }
+
+    return run;
   }
 
   /**
