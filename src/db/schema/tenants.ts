@@ -5,6 +5,7 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { branches } from './branches.ts';
@@ -23,8 +24,16 @@ export const tenants = pgTable('tenants', {
   id: uuid('id').defaultRandom().primaryKey(),
   name:        text('name').notNull(),
   slug:        text('slug').notNull().unique(), // subdomain: swamy.kwickly.com
-  logoUrl:     text('logo_url'),
-  brandColor:  text('brand_color').default('#6366F1'),
+  brandColor: text('brand_color').default('#4f46e5').notNull(),
+  logoUrl: text('logo_url'),
+  logoDarkUrl: text('logo_dark_url'),
+  faviconUrl: text('favicon_url'),
+  themeMode: text('theme_mode').default('system').notNull(), // 'system' | 'light' | 'dark'
+  themeConfig: jsonb('theme_config').$type<{
+    light: Record<string, string>;
+    dark: Record<string, string>;
+    fonts: { sans: string; serif: string; mono: string; };
+  }>().default({ light: {}, dark: {}, fonts: { sans: "Open Sans, sans-serif", serif: "Georgia, serif", mono: "Menlo, monospace" } }),
   phone:       text('phone'),
   email:       text('email'),
   address:     text('address'),

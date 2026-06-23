@@ -99,6 +99,13 @@
       "when": 1782243645913,
       "tag": "0013_right_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1782251520806,
+      "tag": "0014_clumsy_arachne",
+      "breakpoints": true
     }
   ]
 }

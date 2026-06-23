@@ -58,7 +58,11 @@ export const tenantController = new Elysia({ prefix: '/v1/tenant' })
     body: t.Partial(t.Object({
       name: t.String(),
       brandColor: t.String(),
-      logoUrl: t.String(),
+      logoUrl: t.Optional(t.String({ format: 'uri' })),
+      logoDarkUrl: t.Optional(t.String({ format: 'uri' })),
+      faviconUrl: t.Optional(t.String({ format: 'uri' })),
+      themeMode: t.Optional(t.Union([t.Literal('system'), t.Literal('light'), t.Literal('dark')])),
+      themeConfig: t.Optional(t.Any()),
       phone: t.String(),
       email: t.String(),
       address: t.String()
