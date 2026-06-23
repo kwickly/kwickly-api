@@ -4,6 +4,7 @@ import { db } from '../../db/index.ts';
 import { staffProfiles } from '../../db/schema/staff.ts';
 import { users } from '../../db/schema/users.ts';
 import { roles, rolePermissions, permissions } from '../../db/schema/rbac.ts';
+import { timesheets } from '../../db/schema/timesheets.ts';
 import { redis } from '../../shared/redis.ts';
 
 export class StaffService {
@@ -280,5 +281,58 @@ export class StaffService {
     import('../../shared/redis.ts').then(m => m.invalidateCache(cacheKey)).catch(e => console.error(e));
 
     return { success: true };
+  }
+
+  /**
+   * Fetch timesheets
+   */
+  async getPlatformTimesheets(params: { limit?: number; offset?: number } = {}) {
+    const records = await db.query.timesheets.findMany({
+      limit: params.limit || 50,
+      offset: params.offset || 0,
+      orderBy: (ts, { desc }) => [desc(ts.createdAt)],
+      with: {
+        staff: {
+          columns: { name: true, role: true, email: true }
+        },
+        branch: {
+          columns: { name: true }
+        },
+        reviewer: {
+          columns: { name: true }
+        }
+      }
+    });
+
+    return records;
+  }
+
+  /**
+   * Update timesheet status and remarks
+   */
+  async updateTimesheet(id: string, payload: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    reviewerNotes?: string;
+    reviewedBy: string;
+  }) {
+    if (payload.status === 'REJECTED' && !payload.reviewerNotes?.trim()) {
+      throw new Error('A rejection remark is required');
+    }
+
+    const [updated] = await db.update(timesheets).set({
+      status: payload.status,
+      reviewerNotes: payload.reviewerNotes || null,
+      reviewedBy: payload.reviewedBy,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(timesheets.id, id))
+    .returning();
+
+    if (!updated) {
+      throw new Error('Timesheet not found');
+    }
+
+    return updated;
   }
 }

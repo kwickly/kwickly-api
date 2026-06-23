@@ -22,6 +22,10 @@ export const platformStaffController = new Elysia({ prefix: '/v1/platform/staff'
     const data = await platformService.getPlatformStaff();
     return { success: true, data };
   })
+  .get('/', async () => {
+    const data = await platformService.getPlatformStaff();
+    return { success: true, data };
+  })
 
   .get('/roles', async ({ set }) => {
     // For platform roles, we pass null as tenantId
@@ -42,16 +46,35 @@ export const platformStaffController = new Elysia({ prefix: '/v1/platform/staff'
     return await staffService.deleteRole(null, params.id, user);
   })
 
-  .get('/timesheets', async () => {
-    // Stub implementation for now
-    return { success: true, data: [] };
+  .get('/timesheets', async ({ query }) => {
+    const limit = query.limit ? parseInt(query.limit) : 50;
+    const offset = query.offset ? parseInt(query.offset) : 0;
+    const data = await staffService.getPlatformTimesheets({ limit, offset });
+    
+    // Map the relational data to a flat structure if expected by frontend
+    const mappedData = data.map(ts => ({
+      ...ts,
+      staffName: ts.staff?.name || 'Unknown Staff'
+    }));
+
+    return { success: true, data: mappedData };
+  }, {
+    query: t.Optional(t.Object({
+      limit: t.Optional(t.String()),
+      offset: t.Optional(t.String())
+    }))
   })
 
-  .patch('/timesheets/:id', async ({ body }) => {
-    // Stub implementation
-    return { success: true, data: { id: 'stub', status: body.status } };
+  .patch('/timesheets/:id', async ({ body, params, user }) => {
+    const data = await staffService.updateTimesheet(params.id, {
+      status: body.status,
+      reviewerNotes: body.reviewerNotes,
+      reviewedBy: user.id
+    });
+    return { success: true, data };
   }, {
     body: t.Object({
-      status: t.Union([t.Literal('APPROVED'), t.Literal('REJECTED')])
+      status: t.Union([t.Literal('PENDING'), t.Literal('APPROVED'), t.Literal('REJECTED')]),
+      reviewerNotes: t.Optional(t.String())
     })
   });

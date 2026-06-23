@@ -223,7 +223,7 @@ async function main() {
         latitude: faker.location.latitude(),
         longitude: faker.location.longitude(),
       }))
-    ).returning();
+    ).onConflictDoNothing().returning();
     mockBranches.push(...branches);
   }
 
@@ -478,6 +478,46 @@ async function main() {
       link: 'https://kwickly.com',
       isActive: true,
     });
+  }
+
+  // Mock Timesheets
+  console.log('   - Timesheets...');
+  const allStaff = [...platformAdminUsers, ...mockUsers.filter(u => u.role === 'staff')];
+  for (const staff of allStaff) {
+    if (faker.datatype.boolean()) {
+      const clockIn = faker.date.recent({ days: 7 });
+      const status = faker.helpers.arrayElement(['PENDING', 'APPROVED', 'REJECTED'] as const);
+      let clockOut = null;
+      let totalHours = null;
+      let reviewerNotes = null;
+      let reviewedBy = null;
+
+      if (status !== 'PENDING') {
+        const hours = faker.number.int({ min: 4, max: 9 });
+        clockOut = new Date(clockIn.getTime() + hours * 60 * 60 * 1000);
+        totalHours = hours.toString();
+        reviewedBy = platformAdminUsers[0].id; // first platform admin
+        
+        if (status === 'REJECTED') {
+          reviewerNotes = faker.helpers.arrayElement(['Missing lunch break', 'Clocked out late without approval', 'Incorrect hours logged']);
+        } else if (faker.datatype.boolean()) {
+          reviewerNotes = faker.helpers.arrayElement(['Approved with adjusted overtime', 'Note: arrived late']);
+        }
+      }
+
+      await db.insert(schema.timesheets).values({
+        staffId: staff.id,
+        tenantId: staff.tenantId,
+        branchId: staff.branchId,
+        clockIn,
+        clockOut,
+        totalHours,
+        status,
+        reviewedBy,
+        reviewerNotes,
+        reviewedAt: status !== 'PENDING' ? faker.date.recent({ days: 1 }) : null,
+      });
+    }
   }
 
   console.log('✅ Seeding completed successfully!');
