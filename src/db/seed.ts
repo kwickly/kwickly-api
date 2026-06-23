@@ -77,6 +77,7 @@ async function main() {
     // CRM & Promotions
     { name: 'Manage CRM', slug: 'crm:manage', description: 'Can view and manage customer data' },
     { name: 'Manage Promotions', slug: 'promotions:manage', description: 'Can create coupons and ads' },
+    { name: 'Manage Wallet', slug: 'wallet:manage', description: 'Can credit/debit customer wallets' },
     // Subscriptions
     { name: 'Manage Subscriptions', slug: 'subscriptions:manage', description: 'Can manage SaaS plans' },
   ];
@@ -187,7 +188,7 @@ async function main() {
 
   for (const user of stableUsers) {
     await db.insert(schema.users).values(user).onConflictDoUpdate({
-      target: schema.users.phone,
+      target: schema.users.email,
       set: user
     });
   }
@@ -226,9 +227,21 @@ async function main() {
     mockBranches.push(...branches);
   }
 
-  // Mock Users (Staff & Customers)
-  console.log('   - Staff & Customers...');
+  // Mock Users (Staff & Customers & Platform Admins)
+  console.log('   - Staff, Customers & Platform Admins...');
   const allBranches = [...mockBranches, swamyMainBranch];
+  
+  // Seed randomized super_admins and platform_owners
+  const platformAdminUsers = await db.insert(schema.users).values(
+    Array.from({ length: 5 }).map(() => ({
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
+      phone: faker.phone.number(),
+      password: mockPassword,
+      role: faker.helpers.arrayElement(['super_admin', 'platform_owner'] as const),
+    }))
+  ).returning();
+
   const mockUsers = await db.insert(schema.users).values(
     Array.from({ length: 30 }).map(() => {
       const branch = faker.helpers.arrayElement(allBranches);
@@ -352,11 +365,47 @@ async function main() {
         });
       }
     }
+
+    // Mock Suppliers
+    await db.insert(schema.suppliers).values(
+      Array.from({ length: 3 }).map(() => ({
+        tenantId: tenant.id,
+        name: faker.company.name() + ' Suppliers',
+        contactPerson: faker.person.fullName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        address: faker.location.streetAddress(),
+        gstNumber: faker.string.alphanumeric(15).toUpperCase(),
+      }))
+    ).onConflictDoNothing();
+  }
+
+  // Mock CRM Profiles and Wallet
+  console.log('   - CRM Profiles & Wallets...');
+  const customers = mockUsers.filter(u => u.role === 'customer');
+  for (const customer of customers) {
+    if (!customer.tenantId) continue;
+    
+    // Create Profile with Wallet Balance
+    await db.insert(schema.customerProfiles).values({
+      tenantId: customer.tenantId,
+      userId: customer.id,
+      marketingOptIn: faker.datatype.boolean(),
+      walletBalance: faker.number.float({ min: 50, max: 1000 }).toFixed(2),
+    }).onConflictDoNothing();
+
+    // Create Initial Wallet Transaction (Top-up)
+    await db.insert(schema.walletTransactions).values({
+      tenantId: customer.tenantId,
+      userId: customer.id,
+      amount: faker.number.float({ min: 50, max: 1000 }).toFixed(2),
+      type: 'CREDIT',
+      reason: 'Initial Promo Top-up',
+    });
   }
 
   // Mock Orders, KOTs & Payments
   console.log('   - Orders, KOTs & Payments...');
-  const customers = mockUsers.filter(u => u.role === 'customer');
   for (const branch of allBranches) {
     if (!branch) continue;
     const branchItems = await db.query.menuItems.findMany({

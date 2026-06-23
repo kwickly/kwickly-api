@@ -64,6 +64,20 @@
       "when": 1782041483011,
       "tag": "0008_glorious_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782234852664,
+      "tag": "0009_broken_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782237211937,
+      "tag": "0010_unusual_eternity",
+      "breakpoints": true
     }
   ]
 }

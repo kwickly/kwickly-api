@@ -1,6 +1,6 @@
 import { eq, and, isNull, sum } from 'drizzle-orm';
 import { db } from '../../db/index';
-import { rawMaterials, recipes, stockLedgers } from '../../db/schema/inventory';
+import { rawMaterials, recipes, stockLedgers, suppliers } from '../../db/schema/inventory';
 
 export class InventoryService {
   /**
@@ -85,5 +85,37 @@ export class InventoryService {
       })
       .returning();
     return recipe;
+  }
+  /**
+   * Fetch all suppliers
+   */
+  async getSuppliers(tenantId: string) {
+    return await db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.tenantId, tenantId))
+      .execute();
+  }
+
+  /**
+   * Add a new supplier
+   */
+  async addSupplier(tenantId: string, payload: {
+    name: string;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    gstNumber?: string;
+    taxId?: string;
+  }) {
+    const [supplier] = await db
+      .insert(suppliers)
+      .values({
+        tenantId,
+        ...payload,
+      })
+      .returning();
+    return supplier;
   }
 }

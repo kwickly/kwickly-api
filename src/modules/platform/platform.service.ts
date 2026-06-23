@@ -232,4 +232,28 @@ export class PlatformService {
       }
     };
   }
+
+  /**
+   * Retrieve platform staff (super_admins and platform_owners).
+   */
+  async getPlatformStaff() {
+    return await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        phone: users.phone,
+        role: users.role,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(
+        or(
+          eq(users.role, 'super_admin'),
+          eq(users.role, 'platform_owner')
+        )
+      )
+      .orderBy(desc(users.createdAt))
+      .execute();
+  }
 }

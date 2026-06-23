@@ -24,6 +24,26 @@ export const unitOfMeasurementEnum = pgEnum('unit_of_measurement', [
 // ─── Tables ─────────────────────────────────────────────────────────────────
 
 /**
+ * Suppliers / Vendors for raw materials
+ */
+export const suppliers = pgTable('suppliers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  contactPerson: text('contact_person'),
+  email: text('email'),
+  phone: text('phone'),
+  address: text('address'),
+  gstNumber: text('gst_number'),
+  taxId: text('tax_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+
+/**
  * Raw Materials purchased by the restaurant
  */
 export const rawMaterials = pgTable('raw_materials', {
@@ -108,6 +128,13 @@ export const stockLedgersRelations = relations(stockLedgers, ({ one }) => ({
   }),
 }));
 
+export const suppliersRelations = relations(suppliers, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [suppliers.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 export type RawMaterial = typeof rawMaterials.$inferSelect;
 export type NewRawMaterial = typeof rawMaterials.$inferInsert;
 
@@ -116,3 +143,6 @@ export type NewRecipe = typeof recipes.$inferInsert;
 
 export type StockLedger = typeof stockLedgers.$inferSelect;
 export type NewStockLedger = typeof stockLedgers.$inferInsert;
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type NewSupplier = typeof suppliers.$inferInsert;

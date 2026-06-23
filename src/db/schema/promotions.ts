@@ -35,6 +35,7 @@ export const coupons = pgTable('coupons', {
   validFrom: timestamp('valid_from'),
   validUntil: timestamp('valid_until'),
   usageLimit: integer('usage_limit'),
+  usedCount: integer('used_count').default(0).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

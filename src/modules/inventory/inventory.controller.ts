@@ -62,4 +62,37 @@ export const inventoryController = new Elysia({ prefix: '/v1/inventory' })
       rawMaterialId: t.String(),
       quantityRequired: t.String(),
     })
-  });
+  })
+  .get(
+    '/suppliers',
+    async ({ user, inventoryService }) => {
+      return inventoryService.getSuppliers(user.tenantId);
+    },
+    {
+      detail: {
+        summary: 'Get Suppliers',
+        tags: ['Inventory'],
+      },
+    }
+  )
+  .post(
+    '/suppliers',
+    async ({ user, body, inventoryService }) => {
+      return inventoryService.addSupplier(user.tenantId, body);
+    },
+    {
+      body: t.Object({
+        name: t.String(),
+        contactPerson: t.Optional(t.String()),
+        email: t.Optional(t.String()),
+        phone: t.Optional(t.String()),
+        address: t.Optional(t.String()),
+        gstNumber: t.Optional(t.String()),
+        taxId: t.Optional(t.String()),
+      }),
+      detail: {
+        summary: 'Add Supplier',
+        tags: ['Inventory'],
+      },
+    }
+  );

@@ -6,6 +6,7 @@ import {
   timestamp,
   decimal,
   uniqueIndex,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
@@ -28,12 +29,36 @@ export const customerProfiles = pgTable('customer_profiles', {
   anniversaryDate: timestamp('anniversary_date'),
   marketingOptIn: boolean('marketing_opt_in').default(false).notNull(),
   lifetimeValue: decimal('lifetime_value', { precision: 12, scale: 2 }).default('0').notNull(),
+  walletBalance: decimal('wallet_balance', { precision: 12, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   // Ensure a user only has ONE marketing profile per restaurant tenant
   unqTenantUser: uniqueIndex('unq_cust_prof_tenant_user').on(table.tenantId, table.userId),
 }));
+
+export const walletTransactionTypeEnum = pgEnum('wallet_transaction_type', [
+  'CREDIT',
+  'DEBIT',
+]);
+
+/**
+ * Double-entry ledger tracking customer wallet balance (real money equivalents)
+ */
+export const walletTransactions = pgTable('wallet_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  orderId: uuid('order_id'), // Nullable
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  type: walletTransactionTypeEnum('type').notNull(),
+  reason: text('reason').notNull(), // e.g., "Refund for Order #123", "Wallet Top-up"
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 /**
  * Double-entry ledger tracking customer loyalty points
@@ -76,8 +101,22 @@ export const loyaltyLedgersRelations = relations(loyaltyLedgers, ({ one }) => ({
   // order: one(orders, { ... }) // Will link to orders later
 }));
 
+export const walletTransactionsRelations = relations(walletTransactions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [walletTransactions.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [walletTransactions.userId],
+    references: [users.id],
+  }),
+}));
+
 export type CustomerProfile = typeof customerProfiles.$inferSelect;
 export type NewCustomerProfile = typeof customerProfiles.$inferInsert;
 
 export type LoyaltyLedger = typeof loyaltyLedgers.$inferSelect;
 export type NewLoyaltyLedger = typeof loyaltyLedgers.$inferInsert;
+
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+export type NewWalletTransaction = typeof walletTransactions.$inferInsert;

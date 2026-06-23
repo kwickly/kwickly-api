@@ -156,3 +156,6 @@ This phase introduced robust multi-tenant support tracking and user profile mana
 *   [x] **User Profile Management:**
     *   `PATCH /v1/auth/profile`: Protected endpoint for updating basic user details (Name, Phone).
     *   Updated `AuthService.updateProfile` logic.
+
+- **Inventory Module**: Implemented Suppliers table and endpoints.
+- **Platform Module**: Implemented GET /staff endpoint.

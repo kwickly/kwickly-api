@@ -26,6 +26,7 @@ import { combosController } from './modules/combos/combos.controller.ts';
 import { promotionsController } from './modules/promotions/promotions.controller.ts';
 import { paymentsController } from './modules/payments/payments.controller.ts';
 import { crmController } from './modules/crm/crm.controller.ts';
+import { walletController } from './modules/crm/wallet.controller.ts';
 import { inventoryController } from './modules/inventory/inventory.controller.ts';
 import { staffController } from './modules/staff/staff.controller.ts';
 import { platformStaffController } from './modules/staff/platform-staff.controller.ts';
@@ -114,6 +115,7 @@ export const app = new Elysia()
       .use(promotionsController)
       .use(paymentsController)
       .use(crmController)
+      .use(walletController)
       .use(inventoryController)
       .use(staffController)
       .use(platformStaffController)
