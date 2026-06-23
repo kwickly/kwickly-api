@@ -3,6 +3,7 @@ import { db } from './db/index.ts';
 import { logger } from './shared/logger.ts';
 import { app } from './server.ts';
 import { eventBus, EVENTS } from './shared/events.ts';
+import { payrollController } from './modules/payroll/payroll.controller.ts';
 
 async function bootstrap() {
   try {
