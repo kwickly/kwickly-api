@@ -497,7 +497,10 @@ async function main() {
         const hours = faker.number.int({ min: 4, max: 9 });
         clockOut = new Date(clockIn.getTime() + hours * 60 * 60 * 1000);
         totalHours = hours.toString();
-        reviewedBy = platformAdminUsers[0].id; // first platform admin
+        const firstAdmin = platformAdminUsers[0];
+        if (firstAdmin) {
+          reviewedBy = firstAdmin.id; // first platform admin
+        }
         
         if (status === 'REJECTED') {
           reviewerNotes = faker.helpers.arrayElement(['Missing lunch break', 'Clocked out late without approval', 'Incorrect hours logged']);
@@ -536,20 +539,21 @@ async function main() {
     await db.insert(schema.publicHolidays).values({
       tenantId: tenant.id,
       name: 'Sample Public Holiday',
-      date: holidayDate.toISOString().split('T')[0]
+      date: holidayDate.toISOString().slice(0, 10)
     }).onConflictDoNothing();
 
     const tenantStaff = allStaff.filter(s => s.tenantId === tenant.id);
-    if (tenantStaff.length > 0) {
+    const firstStaff = tenantStaff[0];
+    if (firstStaff) {
       const leaveStart = new Date(startOfMonth.getTime() + 10 * 86400000); // 10th
       const leaveEnd = new Date(startOfMonth.getTime() + 12 * 86400000); // 12th
       
       await db.insert(schema.staffLeaves).values({
         tenantId: tenant.id,
-        staffId: tenantStaff[0].id,
+        staffId: firstStaff.id,
         leaveType: 'UNPAID',
-        startDate: leaveStart.toISOString().split('T')[0],
-        endDate: leaveEnd.toISOString().split('T')[0],
+        startDate: leaveStart.toISOString().slice(0, 10),
+        endDate: leaveEnd.toISOString().slice(0, 10),
         status: 'APPROVED'
       });
     }
@@ -569,8 +573,8 @@ async function main() {
 
     const [run] = await db.insert(schema.payrollRuns).values({
       tenantId: tenant.id,
-      periodStartDate: startOfMonth.toISOString().split('T')[0],
-      periodEndDate: endOfMonth.toISOString().split('T')[0],
+      periodStartDate: startOfMonth.toISOString().slice(0, 10),
+      periodEndDate: endOfMonth.toISOString().slice(0, 10),
       status: 'DRAFT',
     }).onConflictDoUpdate({
       target: [schema.payrollRuns.tenantId, schema.payrollRuns.periodStartDate, schema.payrollRuns.periodEndDate],

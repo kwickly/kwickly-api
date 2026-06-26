@@ -116,18 +116,19 @@ export class PayrollService {
       ).execute();
 
     const leavesByStaff = unpaidLeaves.reduce((acc, l) => {
-      if (!acc[l.staffId]) acc[l.staffId] = 0;
       const start = new Date(l.startDate);
       const end = new Date(l.endDate);
       const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      acc[l.staffId] += diffDays;
+      const current = acc[l.staffId] ?? 0;
+      acc[l.staffId] = current + diffDays;
       return acc;
     }, {} as Record<string, number>);
 
     // Group by staffId
     const tsByStaff = allTimesheets.reduce((acc, ts) => {
-      if (!acc[ts.staffId]) acc[ts.staffId] = [];
-      acc[ts.staffId].push(ts);
+      const arr = acc[ts.staffId] ?? [];
+      arr.push(ts);
+      acc[ts.staffId] = arr;
       return acc;
     }, {} as Record<string, typeof allTimesheets>);
 
@@ -145,7 +146,7 @@ export class PayrollService {
       staffTs.forEach(ts => {
         if (ts.totalHours) {
           const h = Number(ts.totalHours);
-          const tsDateStr = ts.clockIn.toISOString().split('T')[0];
+          const tsDateStr = ts.clockIn.toISOString().slice(0, 10);
           const isHoliday = holidayDates.has(tsDateStr);
           
           if (isHoliday) {
