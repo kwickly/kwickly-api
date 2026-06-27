@@ -21,6 +21,7 @@ Failure to follow these rules will compromise the system's data integrity.
 - **Elysia Context:** Use Elysia's `.derive()` to inject data into the context (e.g., Auth Guards parsing JWTs and injecting the `user` object).
 - **Caching:** Use the `withCache` helper in `src/shared/redis.ts` to wrap read-heavy, rarely-changing queries (like fetching the restaurant menu or branch config).
 - **Audit Logging:** The global `auditPlugin` in `src/shared/audit.ts` automatically logs all mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`). You do not need to manually log these actions in your controllers.
+- **Temporary Scripts:** All temporary/scratch scripts, testing helpers, or query scripts (like `check.ts` or `test_svc.ts`) must be created under a `scripts/` folder at the root. The `scripts/` folder is git-ignored and must never be tracked or pushed to the git repository.
 
 ## 4. Local Development vs Production
 - **Local Database:** When `.env` contains `localhost` in the `DATABASE_URL`, `src/shared/db.ts` automatically switches to the standard `postgres` driver to support local Docker instances.
