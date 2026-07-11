@@ -228,4 +228,52 @@ export class SubscriptionsService {
 
     return plan;
   }
+  /**
+   * Fetch all customer subscriptions for a tenant (Dashboard View)
+   */
+  async getCustomerSubscriptions(tenantId: string) {
+    return await db
+      .select({
+        id: customerSubscriptions.id,
+        status: customerSubscriptions.status,
+        totalMeals: customerSubscriptions.totalMeals,
+        balanceRemaining: customerSubscriptions.balanceRemaining,
+        startsAt: customerSubscriptions.startsAt,
+        expiresAt: customerSubscriptions.expiresAt,
+        autoRenew: customerSubscriptions.autoRenew,
+        createdAt: customerSubscriptions.createdAt,
+        customer: {
+          id: require('../../db/schema/users').users.id,
+          name: require('../../db/schema/users').users.name,
+          email: require('../../db/schema/users').users.email,
+        },
+        plan: {
+          id: subscriptionPlans.id,
+          name: subscriptionPlans.name,
+          mealType: subscriptionPlans.mealType,
+        }
+      })
+      .from(customerSubscriptions)
+      .innerJoin(require('../../db/schema/users').users, eq(customerSubscriptions.customerId, require('../../db/schema/users').users.id))
+      .innerJoin(subscriptionPlans, eq(customerSubscriptions.planId, subscriptionPlans.id))
+      .where(eq(customerSubscriptions.tenantId, tenantId))
+      .orderBy(customerSubscriptions.createdAt)
+      .execute();
+  }
+
+  /**
+   * Update customer subscription status (Pause / Activate / Cancel)
+   */
+  async updateCustomerSubscriptionStatus(tenantId: string, subscriptionId: string, status: 'active' | 'paused' | 'cancelled') {
+    const [sub] = await db
+      .update(customerSubscriptions)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(customerSubscriptions.id, subscriptionId), eq(customerSubscriptions.tenantId, tenantId)))
+      .returning();
+    
+    return sub;
+  }
 }

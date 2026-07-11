@@ -18,6 +18,7 @@ import { websocketPlugin } from './shared/websocket.ts';
 
 import { analyticsController } from './modules/analytics/analytics.controller.ts';
 import { hardwareController } from './modules/hardware/hardware.controller.ts';
+import { devicesController } from './modules/devices/devices.controller.ts';
 
 import { subscriptionsController } from './modules/subscriptions/subscriptions.controller.ts';
 import { attendanceController } from './modules/attendance/attendance.controller.ts';
@@ -110,6 +111,7 @@ export const app = new Elysia()
       .use(kotsController)
       .use(analyticsController)
       .use(hardwareController)
+      .use(devicesController)
 
       // Register Final Phase Modules
       .use(combosController)

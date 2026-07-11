@@ -13,11 +13,13 @@ export class AuthService {
       where: eq(tenants.id, tenantId)
     });
     if (!tenantRecord) return null;
+    
+    // In order to fix the type errors, we should either omit these 
+    // or fetch them from tenantBranding. Since we don't have tenantBranding here,
+    // we will just return basic tenant details. (Frontend gets full branding on load anyway).
     return {
       id: tenantRecord.id,
       name: tenantRecord.name,
-      logoUrl: tenantRecord.logoUrl,
-      brandColor: tenantRecord.brandColor
     };
   }
 

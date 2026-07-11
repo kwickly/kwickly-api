@@ -69,7 +69,7 @@ export const platformStaffController = new Elysia({ prefix: '/v1/platform/staff'
     const data = await staffService.updateTimesheet(params.id, {
       status: body.status,
       reviewerNotes: body.reviewerNotes,
-      reviewedBy: user.id
+      reviewedBy: user!.sub
     });
     return { success: true, data };
   }, {

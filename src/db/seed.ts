@@ -182,6 +182,7 @@ async function main() {
       email: 'manager@swamy.com',
       phone: '2222222222',
       password: mockPassword,
+      posPin: await Bun.password.hash('1234'), // Hashed 1234 PIN
       role: 'staff' as const,
       roleId: seededRoles['manager'].id,
     }

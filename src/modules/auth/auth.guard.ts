@@ -1,5 +1,8 @@
 import { Elysia } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
+import { db } from '../../db';
+import { eq } from 'drizzle-orm';
+import { rolePermissions, permissions } from '../../db/schema/rbac';
 
 export type JwtPayload = {
   sub: string;         // User ID
@@ -54,5 +57,49 @@ export const requireAuth = (app: Elysia) => app
     if (!user) {
       set.status = 401;
       return { error: 'Unauthorized', message: 'Missing or invalid access token' };
+    }
+  });
+
+// 3. Granular RBAC Guard: Checks if the user's role has the required permissions
+export const requirePermissions = (requiredPermissions: string[]) => (app: Elysia) => app
+  .use(requireAuth)
+  .onBeforeHandle(async ({ user, set }) => {
+    if (!user) return; // handled by requireAuth
+
+    // Platform owners bypass all permission checks
+    if (user.role === 'platform_owner' || user.role === 'super_admin' || user.role === 'tenant_owner') {
+      return; 
+    }
+
+    if (!user.roleId) {
+      set.status = 403;
+      return { error: 'Forbidden', message: 'User has no assigned role' };
+    }
+
+    try {
+      // Fetch user's permissions from the DB
+      const userPermissions = await db
+        .select({ slug: permissions.slug })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(rolePermissions.roleId, user.roleId));
+
+      const userPermissionSlugs = userPermissions.map(p => p.slug);
+
+      // Check if user has all required permissions
+      const hasAllPermissions = requiredPermissions.every(rp => userPermissionSlugs.includes(rp));
+
+      if (!hasAllPermissions) {
+        set.status = 403;
+        return { 
+          error: 'Forbidden', 
+          message: 'Insufficient permissions',
+          required: requiredPermissions
+        };
+      }
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+      set.status = 500;
+      return { error: 'Internal Server Error', message: 'Failed to verify permissions' };
     }
   });

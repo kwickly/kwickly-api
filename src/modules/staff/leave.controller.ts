@@ -45,11 +45,11 @@ export const leaveController = new Elysia({ prefix: '/v1/leave' })
       return { success: false, message: 'Unauthorized: Tenant context missing' };
     }
     // Managers can see all leaves, staff can only see their own
-    if (user.roleDetails?.permissions?.includes('attendance:manage') || user.role === 'platform_owner' || user.role === 'tenant_owner' || user.role === 'super_admin') {
+    if ((user as any).roleDetails?.permissions?.includes('attendance:manage') || user.role === 'platform_owner' || user.role === 'tenant_owner' || user.role === 'super_admin') {
       const data = await leaveService.getLeaves(user.tenantId);
       return { success: true, data };
     } else {
-      const data = await leaveService.getStaffLeaves(user.id);
+      const data = await leaveService.getStaffLeaves(user.sub);
       return { success: true, data };
     }
   })
@@ -58,7 +58,7 @@ export const leaveController = new Elysia({ prefix: '/v1/leave' })
       set.status = 401;
       return { success: false, message: 'Unauthorized: Tenant context missing' };
     }
-    const data = await leaveService.requestLeave(user.tenantId, user.id, body);
+    const data = await leaveService.requestLeave(user.tenantId, user.sub, body);
     return { success: true, data };
   }, {
     body: t.Object({

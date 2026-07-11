@@ -46,7 +46,7 @@ export const platformSupportController = new Elysia({ prefix: '/v1/platform/supp
   })
   
   .post('/tickets/:id/messages', async ({ user, params, body }) => {
-    const message = await supportService.addMessage(params.id, user!.id, body.message);
+    const message = await supportService.addMessage(params.id, user!.sub, body.message);
     return { success: true, data: message };
   }, {
     body: t.Object({

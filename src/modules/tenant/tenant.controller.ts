@@ -65,6 +65,31 @@ export const tenantController = new Elysia({ prefix: '/v1/tenant' })
       themeConfig: t.Optional(t.Any()),
       phone: t.String(),
       email: t.String(),
-      address: t.String()
+    }))
+  })
+
+  /**
+   * GET /v1/tenant/audit-logs
+   * Retrieves audit logs for the current tenant.
+   */
+  .get('/audit-logs', async ({ user, query, set }) => {
+    if (!user?.tenantId) {
+      set.status = 400;
+      return { success: false, error: 'User is not associated with a tenant' };
+    }
+    
+    // Lazy load the service so we don't break existing imports if something is missing
+    const { TenantService } = await import('./tenant.service.ts');
+    const tenantService = new TenantService();
+    
+    const limit = query.limit ? parseInt(query.limit as string, 10) : 50;
+    const offset = query.offset ? parseInt(query.offset as string, 10) : 0;
+    
+    const data = await tenantService.getAuditLogs(user.tenantId, limit, offset);
+    return { success: true, data };
+  }, {
+    query: t.Optional(t.Object({
+      limit: t.Optional(t.String()),
+      offset: t.Optional(t.String()),
     }))
   });

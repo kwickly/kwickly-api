@@ -105,4 +105,18 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
         const plan = await subscriptionsService.deletePlan(user.tenantId, params.id);
         return { success: true, data: plan, message: 'Plan deleted' };
       })
+      .get('/customers', async ({ user }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        const subscriptions = await subscriptionsService.getCustomerSubscriptions(user.tenantId);
+        return { success: true, data: subscriptions };
+      })
+      .patch('/customers/:id/status', async ({ user, params, body }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        const subscription = await subscriptionsService.updateCustomerSubscriptionStatus(user.tenantId, params.id, body.status);
+        return { success: true, data: subscription, message: 'Subscription status updated' };
+      }, {
+        body: t.Object({
+          status: t.Union([t.Literal('active'), t.Literal('paused'), t.Literal('cancelled')])
+        })
+      })
   );

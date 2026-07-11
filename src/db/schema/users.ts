@@ -34,6 +34,7 @@ export const users = pgTable('users', {
   password:    text('password'), // Hashed password for staff login
   role:        userRoleEnum('role').notNull().default('customer'),
   roleId:      uuid('role_id').references(() => roles.id), // Dynamic custom roles
+  posPin:      text('pos_pin'), // Hashed 4-digit PIN for fast POS login
   avatarUrl:   text('avatar_url'),
   isActive:    boolean('is_active').default(true).notNull(),
   lastLoginAt: timestamp('last_login_at'),

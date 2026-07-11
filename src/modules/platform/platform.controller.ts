@@ -125,4 +125,14 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
     })
+  })
+
+  /**
+   * POST /v1/platform/impersonate/:tenantId
+   * Allows a platform admin to generate a short-lived token to impersonate a tenant.
+   */
+  .post('/impersonate/:tenantId', async ({ params: { tenantId }, user }) => {
+    if (!user) throw new Error('Unauthorized');
+    const data = await platformService.generateImpersonationToken(user.sub, tenantId);
+    return { success: true, data, message: 'Impersonation session started' };
   });

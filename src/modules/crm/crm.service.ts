@@ -1,6 +1,6 @@
 import { eq, and, sum, sql, desc, lte } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
-import { customerProfiles, loyaltyLedgers } from '../../db/schema/crm.ts';
+import { customerProfiles, loyaltyLedgers, walletTransactions } from '../../db/schema/crm.ts';
 import { users } from '../../db/schema/users.ts';
 import { orders } from '../../db/schema/orders.ts';
 
@@ -23,6 +23,9 @@ export class CrmService {
         name: users.name,
         phone: users.phone,
         email: users.email,
+        walletBalance: customerProfiles.walletBalance,
+        lifetimeValue: customerProfiles.lifetimeValue,
+        marketingOptIn: customerProfiles.marketingOptIn,
         loyaltyPoints: sql<string>`COALESCE(SUM(${loyaltyLedgers.points}), 0)`
       })
       .from(users)
@@ -164,9 +167,25 @@ export class CrmService {
       .where(and(eq(loyaltyLedgers.tenantId, tenantId), eq(loyaltyLedgers.userId, userId)))
       .execute();
 
+    const walletLedger = await db
+      .select()
+      .from(walletTransactions)
+      .where(and(eq(walletTransactions.tenantId, tenantId), eq(walletTransactions.userId, userId)))
+      .orderBy(desc(walletTransactions.createdAt))
+      .limit(50);
+
+    const loyaltyLedger = await db
+      .select()
+      .from(loyaltyLedgers)
+      .where(and(eq(loyaltyLedgers.tenantId, tenantId), eq(loyaltyLedgers.userId, userId)))
+      .orderBy(desc(loyaltyLedgers.createdAt))
+      .limit(50);
+
     return {
       ...profile,
       loyaltyPointsBalance: result[0]?.totalPoints || '0',
+      walletTransactions: walletLedger,
+      loyaltyLedgers: loyaltyLedger,
     };
   }
 
@@ -227,5 +246,43 @@ export class CrmService {
       .returning();
 
     return ledger;
+  }
+
+  /**
+   * Adjust wallet balance
+   */
+  async adjustWalletBalance(tenantId: string, userId: string, amount: string, type: 'CREDIT' | 'DEBIT', reason: string, orderId?: string) {
+    let result;
+    await db.transaction(async (tx) => {
+      // Insert transaction record
+      const [record] = await tx.insert(walletTransactions).values({
+        tenantId,
+        userId,
+        amount,
+        type,
+        reason,
+        orderId,
+      }).returning();
+
+      // Adjust wallet balance in customer profile
+      const multiplier = type === 'CREDIT' ? 1 : -1;
+      const [updatedProfile] = await tx
+        .update(customerProfiles)
+        .set({
+          walletBalance: sql`${customerProfiles.walletBalance} + (${multiplier} * ${amount})`,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(customerProfiles.tenantId, tenantId),
+            eq(customerProfiles.userId, userId)
+          )
+        )
+        .returning();
+
+      result = { record, newBalance: updatedProfile?.walletBalance };
+    });
+
+    return result;
   }
 }

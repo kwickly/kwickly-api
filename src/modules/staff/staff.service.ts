@@ -9,6 +9,14 @@ import { redis } from '../../shared/redis.ts';
 
 export class StaffService {
   /**
+   * Fetch all available granular permissions in the system.
+   */
+  async getPermissions() {
+    const allPerms = await db.query.permissions.findMany();
+    return allPerms.map(p => ({ id: p.id, name: p.name, slug: p.slug, description: p.description }));
+  }
+
+  /**
    * Fetch roles available for a tenant (System + Custom)
    */
   async getRoles(tenantId: string) {
@@ -33,6 +41,52 @@ export class StaffService {
       isSystem: r.isSystem,
       permissions: r.permissions.map(p => p.permission.slug)
     }));
+  }
+
+  /**
+   * Create a new custom role for a tenant
+   */
+  async createRole(tenantId: string, name: string, permissionSlugs: string[]) {
+    // Generate a unique slug based on the name
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+    let slug = baseSlug;
+    
+    // Ensure slug uniqueness for this tenant
+    const existing = await db.query.roles.findFirst({
+      where: and(eq(roles.slug, slug), eq(roles.tenantId, tenantId))
+    });
+    
+    if (existing) {
+      slug = `${baseSlug}_${Math.floor(Math.random() * 10000)}`;
+    }
+
+    let newRoleId: string;
+
+    await db.transaction(async (tx) => {
+      const [newRole] = await tx.insert(roles).values({
+        tenantId,
+        name,
+        slug,
+        isSystem: false
+      }).returning();
+      
+      if (!newRole) throw new Error('Failed to create role');
+      newRoleId = newRole.id;
+
+      if (permissionSlugs.length > 0) {
+        const perms = await tx.query.permissions.findMany({
+          where: inArray(permissions.slug, permissionSlugs)
+        });
+
+        if (perms.length > 0) {
+          await tx.insert(rolePermissions).values(
+            perms.map(p => ({ roleId: newRoleId, permissionId: p.id }))
+          );
+        }
+      }
+    });
+
+    return { success: true, roleId: newRoleId! };
   }
 
   /**
@@ -69,7 +123,7 @@ export class StaffService {
       let forkedRole = await db.query.roles.findFirst({
         where: and(
           eq(roles.slug, roleRecord.slug),
-          eq(roles.tenantId, tenantId)
+          tenantId ? eq(roles.tenantId, tenantId) : isNull(roles.tenantId)
         )
       });
 
@@ -81,7 +135,7 @@ export class StaffService {
           slug: roleRecord.slug,
           isSystem: false
         }).returning();
-        forkedRole = newRole;
+        forkedRole = newRole!;
       }
 
       if (!forkedRole) throw new Error('Failed to fork role');
@@ -119,6 +173,7 @@ export class StaffService {
       role: users.role,
       roleId: users.roleId,
       roleName: roles.name,
+      pin: users.posPin,
       isActive: users.isActive,
       salaryType: staffProfiles.salaryType,
       baseSalary: staffProfiles.baseSalary,
@@ -278,7 +333,7 @@ export class StaffService {
     });
 
     const cacheKey = `rbac:permissions:roleId:${roleId}:${tenantId || 'system'}`;
-    import('../../shared/redis.ts').then(m => m.invalidateCache(cacheKey)).catch(e => console.error(e));
+    import('../../shared/redis.ts').then(m => m.redis.del(cacheKey)).catch(e => console.error(e));
 
     return { success: true };
   }

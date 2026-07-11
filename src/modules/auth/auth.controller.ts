@@ -2,6 +2,9 @@ import { Elysia, t } from 'elysia';
 import { AuthService } from './auth.service';
 import { authPlugin } from './auth.guard';
 import { loggerPlugin } from '../../shared/logger';
+import { db } from '../../db';
+import { tenants, tenantBrandings } from '../../db/schema';
+import { eq, or } from 'drizzle-orm';
 
 const authService = new AuthService();
 
@@ -9,6 +12,50 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
   .use(loggerPlugin)
   .use(authPlugin)
   
+  // 0. Fetch Public Branding by Hostname
+  .get('/branding', async ({ query }) => {
+    try {
+      const hostname = query.hostname as string;
+      if (!hostname) {
+        return { success: false, error: 'Hostname required' };
+      }
+      
+      let slug = hostname;
+      // Handle kwickly subdomains (e.g., brand.kwickly.com -> brand)
+      if (hostname.includes('kwickly.com') || hostname.includes('localhost')) {
+        slug = hostname.split('.')[0];
+      }
+
+      const tenantResult = await db.select({
+        id: tenants.id,
+        name: tenants.name,
+        slug: tenants.slug,
+        brandColor: tenantBrandings.brandColor,
+        logoUrl: tenantBrandings.logoUrl,
+        logoDarkUrl: tenantBrandings.logoDarkUrl,
+        hideKwicklyBranding: tenantBrandings.hideKwicklyBranding,
+        themeMode: tenantBrandings.themeMode
+      })
+      .from(tenants)
+      .leftJoin(tenantBrandings, eq(tenants.id, tenantBrandings.tenantId))
+      .where(or(
+        eq(tenants.slug, slug),
+        eq(tenantBrandings.customDomain, hostname)
+      ))
+      .limit(1);
+
+      if (tenantResult.length === 0) {
+        // Return default kwickly branding
+        return { success: true, branding: null };
+      }
+      return { success: true, branding: tenantResult[0] };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }, {
+    query: t.Object({ hostname: t.String() })
+  })
+
   // 1. Request OTP
   .post('/send-otp', async ({ body, log }) => {
     const code = await authService.sendOtp(body.phone);

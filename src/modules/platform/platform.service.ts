@@ -85,8 +85,14 @@ export class PlatformService {
       phone: data.phone,
       address: data.address,
       plan: data.plan || 'FREE',
-      brandColor: data.brandColor || '#6366F1',
     }).returning();
+
+    if (newTenant) {
+      await db.insert(require('../../db/schema/index.ts').tenantBranding).values({
+        tenantId: newTenant.id,
+        brandColor: data.brandColor || '#6366F1',
+      });
+    }
 
     return newTenant;
   }
@@ -255,5 +261,35 @@ export class PlatformService {
       )
       .orderBy(desc(users.createdAt))
       .execute();
+  }
+
+  /**
+   * Generate impersonation data for a tenant
+   */
+  async generateImpersonationToken(adminUserId: string, tenantId: string) {
+    // We already know the user is a platform_owner or super_admin from the auth guard
+    const [tenant] = await db
+      .select({
+        id: tenants.id,
+        name: tenants.name,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+
+    if (!tenant) throw new Error('Tenant not found');
+
+    const [branding] = await db
+      .select()
+      .from(require('../../db/schema/index.ts').tenantBranding)
+      .where(eq(require('../../db/schema/index.ts').tenantBranding.tenantId, tenantId));
+
+    // Return the data needed by the frontend auth store to mock the tenant context
+    return {
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      branding: branding || { brandColor: '#6366F1' },
+      // Optional token, we just rely on x-impersonate-tenant-id for now
+      token: 'impersonation_active',
+    };
   }
 }

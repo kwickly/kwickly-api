@@ -34,7 +34,7 @@ export const supportController = new Elysia({ prefix: '/v1/support' })
       set.status = 403;
       return { success: false, error: 'Tenant context required' };
     }
-    const ticket = await supportService.createTicket(user.tenantId, user.id, body);
+    const ticket = await supportService.createTicket(user.tenantId, user!.sub, body);
     return { success: true, data: ticket };
   }, {
     body: t.Object({
@@ -57,7 +57,7 @@ export const supportController = new Elysia({ prefix: '/v1/support' })
       return { success: false, error: 'Ticket not found' };
     }
     
-    const message = await supportService.addMessage(params.id, user.id, body.message);
+    const message = await supportService.addMessage(params.id, user!.sub, body.message);
     return { success: true, data: message };
   }, {
     body: t.Object({

@@ -2,8 +2,10 @@ import { Elysia, t } from 'elysia';
 import { StaffService } from './staff.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { checkPermission } from '../auth/rbac.guard.ts';
+import { DevicesService } from '../devices/devices.service.ts';
 
 const staffService = new StaffService();
+const devicesService = new DevicesService();
 
 export const staffController = new Elysia({ prefix: '/v1/staff' })
   .use(requireAuth)
@@ -39,6 +41,13 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     })
   })
 
+  .get('/permissions', async ({ set }) => {
+    const perms = await staffService.getPermissions();
+    return { success: true, data: perms };
+  }, {
+    beforeHandle: [checkPermission('staff:read')]
+  })
+
   .get('/roles', async ({ user, set }) => {
     if (!user || !user.tenantId) {
       set.status = 403;
@@ -48,6 +57,21 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     return { success: true, data: roles };
   }, {
     beforeHandle: [checkPermission('staff:read')]
+  })
+
+  .post('/roles', async ({ user, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const result = await staffService.createRole(user.tenantId, body.name, body.permissions);
+    return result;
+  }, {
+    beforeHandle: [checkPermission('staff:write')],
+    body: t.Object({
+      name: t.String(),
+      permissions: t.Array(t.String())
+    })
   })
 
   .patch('/roles/:id', async ({ user, params, body, set }) => {
@@ -91,6 +115,20 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
       baseSalary: t.Optional(t.String()),
       hourlyRate: t.Optional(t.String()),
+    })
+  })
+
+  .post('/:id/pin', async ({ user, params, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const updated = await devicesService.setPosPin(user.tenantId, params.id, body.pin);
+    return { success: true, message: 'PIN updated successfully' };
+  }, {
+    beforeHandle: [checkPermission('staff:write')],
+    body: t.Object({
+      pin: t.String(),
     })
   })
 
