@@ -7,7 +7,7 @@ import {
   pgEnum,
   uniqueIndex,
   date,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { branches } from './branches.ts';
@@ -62,8 +62,11 @@ export const staffAttendance = pgTable('staff_attendance', {
     .references(() => users.id, { onDelete: 'cascade' }),
   clockInAt: timestamp('clock_in_at').notNull(),
   clockOutAt: timestamp('clock_out_at'),
-  totalHours: decimal('total_hours', { precision: 5, scale: 2 }), // Computed dynamically upon clock out
-});
+  totalHours: decimal('total_hours', { precision: 5, scale: 2 }), // Computed dynamically upon clock out,
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_staffAttendance_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Staff Leaves
@@ -82,7 +85,10 @@ export const staffLeaves = pgTable('staff_leaves', {
   status: approvalStatusEnum('status').default('PENDING').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_staffLeaves_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Public Holidays
@@ -96,6 +102,7 @@ export const publicHolidays = pgTable('public_holidays', {
   date: date('date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   uniqueHoliday: uniqueIndex('unique_tenant_holiday').on(table.tenantId, table.date),
 }));

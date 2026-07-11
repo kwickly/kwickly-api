@@ -29,7 +29,7 @@ export class MenusService {
         .where(
           and(
             eq(menuCategories.tenantId, tenantId),
-            eq(menuCategories.isActive, true)
+            eq(menuCategories.status, 'AVAILABLE')
           )
         );
       const total = Number(totalRes?.count || 0);
@@ -42,7 +42,7 @@ export class MenusService {
             eq(menuCategories.tenantId, tenantId),
             // Either global categories or specific to this branch
             // In a real app we might use 'or' logic, for simplicity we assume global here
-            eq(menuCategories.isActive, true)
+            eq(menuCategories.status, 'AVAILABLE')
           )
         )
         .limit(limit)
@@ -51,7 +51,7 @@ export class MenusService {
       // 2. Fetch items
       let itemsConditions = and(
         eq(menuItems.tenantId, tenantId),
-        eq(menuItems.isActive, true),
+        eq(menuItems.status, 'AVAILABLE'),
         isNull(menuItems.deletedAt)
       );
 
@@ -170,7 +170,7 @@ export class MenusService {
 
     let conditions = and(
       eq(menuItemAddons.tenantId, tenantId),
-      eq(menuItemAddons.isActive, true)
+      eq(menuItemAddons.status, 'AVAILABLE')
     );
 
     if (search) {
@@ -237,7 +237,7 @@ export class MenusService {
   async deleteMenuItem(tenantId: string, branchId: string, id: string) {
     const [deleted] = await db
       .update(menuItems)
-      .set({ deletedAt: new Date(), isActive: false })
+      .set({ deletedAt: new Date(), status: 'HIDDEN' })
       .where(and(eq(menuItems.id, id), eq(menuItems.tenantId, tenantId)))
       .returning();
 

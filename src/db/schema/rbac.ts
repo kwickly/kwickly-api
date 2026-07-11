@@ -6,7 +6,7 @@ import {
   timestamp,
   primaryKey,
   uniqueIndex,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 
@@ -19,6 +19,7 @@ export const roles = pgTable('roles', {
   slug:      text('slug').notNull(),       // e.g. "kitchen_staff"
   isSystem:  boolean('is_system').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   uniqueSlugTenant: uniqueIndex('unique_role_slug_tenant').on(table.slug, table.tenantId),
 }));
@@ -31,12 +32,14 @@ export const permissions = pgTable('permissions', {
   slug:        text('slug').notNull().unique(), // e.g. "menu:write"
   description: text('description'),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Role ↔ Permissions (M2M) ────────────────────────────────────────────────
 export const rolePermissions = pgTable('role_permissions', {
   roleId:       uuid('role_id').notNull().references(() => roles.id),
   permissionId: uuid('permission_id').notNull().references(() => permissions.id),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
 }));

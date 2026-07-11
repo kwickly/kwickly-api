@@ -48,6 +48,7 @@ export const orders = pgTable('orders', {
   tableNumber:    text('table_number'),
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   idxTenantBranchCreated: index('idx_orders_tenant_branch_created').on(table.tenantId, table.branchId, table.createdAt),
 }));
@@ -64,6 +65,7 @@ export const orderItems = pgTable('order_items', {
   quantity:    integer('quantity').default(1).notNull(),
   unitPrice:   numeric('unit_price', { precision: 10, scale: 2 }).notNull(),
   total:       numeric('total', { precision: 10, scale: 2 }).notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Relations ───────────────────────────────────────────────────────────────

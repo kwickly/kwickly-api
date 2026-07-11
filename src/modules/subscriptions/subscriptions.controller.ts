@@ -97,7 +97,7 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
           branchId: t.Optional(t.String()),
           carryForward: t.Optional(t.Boolean()),
           allowHoliday: t.Optional(t.Boolean()),
-          isActive: t.Optional(t.Boolean()),
+          status: t.Optional(t.Union([t.Literal('ACTIVE'), t.Literal('GRANDFATHERED'), t.Literal('ARCHIVED')])),
         })
       })
       .delete('/plans/:id', async ({ user, params }) => {

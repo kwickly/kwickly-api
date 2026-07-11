@@ -108,7 +108,7 @@ export class PlatformService {
       phone?: string;
       address?: string;
       plan?: 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
-      isActive?: boolean;
+      status?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
     }
   ) {
     const [updated] = await db
@@ -131,7 +131,7 @@ export class PlatformService {
       .update(tenants)
       .set({
         deletedAt: new Date(),
-        isActive: false,
+        status: 'TERMINATED',
       })
       .where(eq(tenants.id, id))
       .returning();
@@ -146,7 +146,7 @@ export class PlatformService {
     // 1. Total Tenants
     const allTenants = await db.select().from(tenants).where(isNull(tenants.deletedAt));
     const totalTenants = allTenants.length;
-    const activeTenants = allTenants.filter(t => t.isActive).length;
+    const activeTenants = allTenants.filter(t => t.status === 'ACTIVE').length;
 
     // 2. Total Users
     const [usersRes] = await db

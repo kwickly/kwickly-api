@@ -5,7 +5,7 @@ import {
   timestamp,
   jsonb,
   integer,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { users } from './users';
@@ -24,7 +24,10 @@ export const auditLogs = pgTable('audit_logs', {
   ipAddress:   text('ip_address'),       
   userAgent:   text('user_agent'),        // Client device and browser info
   createdAt:   timestamp('created_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_auditLogs_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({

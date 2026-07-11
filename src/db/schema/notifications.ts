@@ -5,7 +5,7 @@ import {
   timestamp,
   pgEnum,
   jsonb,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { users } from './users.ts';
@@ -40,7 +40,10 @@ export const notificationTemplates = pgTable('notification_templates', {
   body: text('body').notNull(), // Supports Handlebars-style variables: {{name}}
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_notificationTemplates_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Audit log of all sent notifications
@@ -60,7 +63,10 @@ export const notificationLogs = pgTable('notification_logs', {
   metadata: jsonb('metadata'), // Stores error details or provider-specific IDs
   sentAt: timestamp('sent_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_notificationLogs_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const notificationTemplatesRelations = relations(notificationTemplates, ({ one }) => ({

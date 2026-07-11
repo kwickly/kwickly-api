@@ -6,7 +6,7 @@ import {
   pgEnum,
   numeric,
   text
-} from 'drizzle-orm/pg-core';
+, index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { branches } from './branches.ts';
@@ -32,7 +32,10 @@ export const timesheets = pgTable('timesheets', {
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_timesheets_tenant_id').on(table.tenantId),
+}));
 
 export const timesheetsRelations = relations(timesheets, ({ one }) => ({
   tenant: one(tenants, { fields: [timesheets.tenantId], references: [tenants.id] }),

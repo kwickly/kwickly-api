@@ -7,7 +7,7 @@ import {
   decimal,
   uniqueIndex,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { users } from './users.ts';
@@ -32,6 +32,7 @@ export const customerProfiles = pgTable('customer_profiles', {
   walletBalance: decimal('wallet_balance', { precision: 12, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   // Ensure a user only has ONE marketing profile per restaurant tenant
   unqTenantUser: uniqueIndex('unq_cust_prof_tenant_user').on(table.tenantId, table.userId),
@@ -58,7 +59,10 @@ export const walletTransactions = pgTable('wallet_transactions', {
   type: walletTransactionTypeEnum('type').notNull(),
   reason: text('reason').notNull(), // e.g., "Refund for Order #123", "Wallet Top-up"
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_walletTransactions_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Double-entry ledger tracking customer loyalty points
@@ -75,7 +79,10 @@ export const loyaltyLedgers = pgTable('loyalty_ledgers', {
   points: decimal('points', { precision: 10, scale: 2 }).notNull(), // Positive (earned) or Negative (redeemed)
   reason: text('reason').notNull(), // e.g., "Order #123", "Redemption on Order #124", "Sign-up Bonus"
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_loyaltyLedgers_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const customerProfilesRelations = relations(customerProfiles, ({ one }) => ({

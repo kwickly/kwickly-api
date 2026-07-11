@@ -53,6 +53,6 @@ export const branchesController = new Elysia({ prefix: '/v1/branches' })
       name: t.String(),
       address: t.String(),
       phone: t.String(),
-      isActive: t.Boolean(),
+      status: t.Union([t.Literal('ACTIVE'), t.Literal('TEMPORARILY_CLOSED'), t.Literal('PERMANENTLY_CLOSED')]),
     }))
   });

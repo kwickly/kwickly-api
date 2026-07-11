@@ -5,7 +5,7 @@ import {
   timestamp,
   decimal,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { branches } from './branches.ts';
@@ -40,7 +40,10 @@ export const suppliers = pgTable('suppliers', {
   taxId: text('tax_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_suppliers_tenant_id').on(table.tenantId),
+}));
 
 
 /**
@@ -56,7 +59,9 @@ export const rawMaterials = pgTable('raw_materials', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => ({
+  idxTenant: index('idx_rawMaterials_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Recipes linking Menu Items to Raw Materials
@@ -71,6 +76,7 @@ export const recipes = pgTable('recipes', {
     .references(() => rawMaterials.id, { onDelete: 'cascade' }),
   quantityRequired: decimal('quantity_required', { precision: 10, scale: 4 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 /**
@@ -90,7 +96,10 @@ export const stockLedgers = pgTable('stock_ledgers', {
   quantityChange: decimal('quantity_change', { precision: 12, scale: 4 }).notNull(), // Positive (Added) or Negative (Consumed/Spoiled)
   reason: text('reason').notNull(), // e.g. "Purchase", "Spoilage", "Transfer IN", "Consumed in Order #123"
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_stockLedgers_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const rawMaterialsRelations = relations(rawMaterials, ({ one, many }) => ({

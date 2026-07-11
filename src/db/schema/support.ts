@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, pgEnum , index} from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { users } from './users';
 
@@ -21,7 +21,10 @@ export const supportTickets = pgTable('support_tickets', {
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_supportTickets_tenant_id').on(table.tenantId),
+}));
 
 export const ticketMessages = pgTable('ticket_messages', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -31,4 +34,5 @@ export const ticketMessages = pgTable('ticket_messages', {
   message: text('message').notNull(),
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });

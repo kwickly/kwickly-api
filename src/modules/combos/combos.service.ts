@@ -10,7 +10,7 @@ export class CombosService {
     // In a real scenario, you'd join with comboItems to get the full tree
     const conditions = [
       eq(combos.tenantId, tenantId),
-      eq(combos.isActive, true),
+      eq(combos.status, 'ACTIVE'),
       isNull(combos.deletedAt)
     ];
 

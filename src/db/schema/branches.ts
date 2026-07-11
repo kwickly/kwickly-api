@@ -1,15 +1,17 @@
 import {
   uuid,
-  pgTable,
+  pgTable, pgEnum,
   text,
   boolean,
   timestamp,
   real,
   jsonb,
   uniqueIndex,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
+export const branchStatusEnum = pgEnum('branchStatusEnum', ['ACTIVE', 'TEMPORARILY_CLOSED', 'PERMANENTLY_CLOSED']);
+
 
 // ─── Table ──────────────────────────────────────────────────────────────────
 export const branches = pgTable('branches', {
@@ -22,7 +24,7 @@ export const branches = pgTable('branches', {
   longitude:    real('longitude'),
   openingHours: jsonb('opening_hours'), // { mon: { open: "09:00", close: "22:00" }, ... }
   currency:     text('currency'), // Optional branch-level override
-  isActive:     boolean('is_active').default(true).notNull(),
+  status: branchStatusEnum('status').default('ACTIVE').notNull(),
   managerId:    uuid('manager_id'), // FK to users — set after users table exists
   createdAt:    timestamp('created_at').defaultNow().notNull(),
   updatedAt:    timestamp('updated_at').defaultNow().notNull(),

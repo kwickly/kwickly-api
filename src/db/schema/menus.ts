@@ -9,10 +9,12 @@ import {
   time,
   pgEnum,
   uniqueIndex,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { branches } from './branches';
+export const menuItemStatusEnum = pgEnum('menu_item_status', ['AVAILABLE', 'OUT_OF_STOCK', 'HIDDEN']);
+
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const menuItemAvailabilityEnum = pgEnum('menu_item_availability', [
@@ -28,9 +30,10 @@ export const menuCategories = pgTable('menu_categories', {
   name:      text('name').notNull(),
   imageUrl:  text('image_url'),
   sortOrder: integer('sort_order').default(0).notNull(),
-  isActive:  boolean('is_active').default(true).notNull(),
+  status: menuItemStatusEnum('status').default('AVAILABLE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   unqTenantCategory: uniqueIndex('unq_cat_tenant_name').on(table.tenantId, table.name),
 }));
@@ -52,7 +55,7 @@ export const menuItems = pgTable('menu_items', {
   availableFrom:  time('available_from'),  // e.g. 11:00
   availableUntil: time('available_until'), // e.g. 15:00
   sortOrder:      integer('sort_order').default(0).notNull(),
-  isActive:       boolean('is_active').default(true).notNull(),
+  status: menuItemStatusEnum('status').default('AVAILABLE').notNull(),
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
   deletedAt:      timestamp('deleted_at'),
@@ -68,6 +71,7 @@ export const menuItemVariants = pgTable('menu_item_variants', {
   name:       text('name').notNull(),   // e.g. "Full Plate"
   priceDelta: numeric('price_delta', { precision: 10, scale: 2 }).default('0').notNull(), // added to base price
   isDefault:  boolean('is_default').default(false).notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Menu Item Add-ons ────────────────────────────────────────────────────────
@@ -78,8 +82,11 @@ export const menuItemAddons = pgTable('menu_item_addons', {
   menuItemId: uuid('menu_item_id').references(() => menuItems.id), // null = global addon
   name:       text('name').notNull(),
   price:      numeric('price', { precision: 10, scale: 2 }).notNull(),
-  isActive:   boolean('is_active').default(true).notNull(),
-});
+  status: menuItemStatusEnum('status').default('AVAILABLE').notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_menuItemAddons_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 export const menuCategoriesRelations = relations(menuCategories, ({ one, many }) => ({

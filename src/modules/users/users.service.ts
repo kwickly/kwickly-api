@@ -22,7 +22,7 @@ export class UsersService {
       role: users.role,
       branchId: users.branchId,
       phone: users.phone,
-      isActive: users.isActive,
+      status: users.status,
     })
     .from(users)
     .where(

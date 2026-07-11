@@ -1,15 +1,15 @@
+import { promotionStatusEnum } from './promotions';
 import {
   uuid,
-  pgTable,
+  pgTable, pgEnum,
   text,
   timestamp,
   boolean,
   uniqueIndex,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
 import { branches } from './branches.ts';
-
 // ─── Tables ─────────────────────────────────────────────────────────────────
 
 /**
@@ -27,10 +27,13 @@ export const inAppAds = pgTable('in_app_ads', {
   link: text('link'),
   activeFrom: timestamp('active_from').defaultNow().notNull(),
   activeUntil: timestamp('active_until'),
-  isActive: boolean('is_active').default(true).notNull(),
+  status: promotionStatusEnum('status').default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_inAppAds_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Tracking for Ad Impressions and Clicks
@@ -43,6 +46,7 @@ export const adImpressions = pgTable('ad_impressions', {
   userId: uuid('user_id'), // Nullable for anonymous views
   clickedAt: timestamp('clicked_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Relations ──────────────────────────────────────────────────────────────

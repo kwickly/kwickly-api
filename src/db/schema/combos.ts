@@ -1,17 +1,19 @@
 import {
   uuid,
-  pgTable,
+  pgTable, pgEnum,
   text,
   boolean,
   integer,
   numeric,
   timestamp,
   time,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { branches } from './branches';
 import { menuItems } from './menus';
+export const comboStatusEnum = pgEnum('comboStatusEnum', ['ACTIVE', 'PAUSED']);
+
 
 // ─── Combos ──────────────────────────────────────────────────────────────────
 // A combo is a bundle of items offered at a discounted price
@@ -25,11 +27,13 @@ export const combos = pgTable('combos', {
   price:          numeric('price', { precision: 10, scale: 2 }).notNull(),
   availableFrom:  time('available_from'),   // e.g. 11:00
   availableUntil: time('available_until'),  // e.g. 15:00
-  isActive:       boolean('is_active').default(true).notNull(),
+  status: comboStatusEnum('status').default('ACTIVE').notNull(),
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
   deletedAt:      timestamp('deleted_at'),
-});
+}, (table) => ({
+  idxTenant: index('idx_combos_tenant_id').on(table.tenantId),
+}));
 
 // ─── Combo Items (M2M) ────────────────────────────────────────────────────────
 export const comboItems = pgTable('combo_items', {
@@ -37,6 +41,7 @@ export const comboItems = pgTable('combo_items', {
   comboId:    uuid('combo_id').notNull().references(() => combos.id),
   menuItemId: uuid('menu_item_id').notNull().references(() => menuItems.id),
   quantity:   integer('quantity').default(1).notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Relations ───────────────────────────────────────────────────────────────

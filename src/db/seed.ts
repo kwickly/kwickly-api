@@ -470,7 +470,7 @@ async function main() {
       code: faker.string.alphanumeric(6).toUpperCase(),
       discountType: 'PERCENTAGE',
       discountValue: '10.00',
-      isActive: true,
+      status: 'ACTIVE',
     });
 
     await db.insert(schema.inAppAds).values({
@@ -478,7 +478,7 @@ async function main() {
       title: 'Special Summer Offer',
       imageUrl: 'https://placehold.co/600x400',
       link: 'https://kwickly.com',
-      isActive: true,
+      status: 'ACTIVE',
     });
   }
 

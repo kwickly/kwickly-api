@@ -15,7 +15,7 @@ export class AdsService {
       .where(
         and(
           eq(inAppAds.tenantId, tenantId),
-          eq(inAppAds.isActive, true),
+          eq(inAppAds.status, 'ACTIVE'),
           or(eq(inAppAds.branchId, branchId as any), isNull(inAppAds.branchId)),
           lte(inAppAds.activeFrom, now),
           or(gte(inAppAds.activeUntil, now), isNull(inAppAds.activeUntil))

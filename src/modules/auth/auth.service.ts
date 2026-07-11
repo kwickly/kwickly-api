@@ -20,6 +20,7 @@ export class AuthService {
     return {
       id: tenantRecord.id,
       name: tenantRecord.name,
+      status: tenantRecord.status
     };
   }
 
@@ -75,7 +76,7 @@ export class AuthService {
       throw new Error('Invalid email or password');
     }
 
-    if (!user.isActive) {
+    if (user.status !== 'ACTIVE') {
       throw new Error('User account is deactivated');
     }
 

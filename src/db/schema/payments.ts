@@ -5,7 +5,7 @@ import {
   numeric,
   timestamp,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { orders } from './orders';
 import { customerSubscriptions } from './subscriptions';
@@ -42,6 +42,7 @@ export const payments = pgTable('payments', {
   failureReason:    text('failure_reason'),
   paidAt:           timestamp('paid_at'),
   createdAt:        timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Relations ───────────────────────────────────────────────────────────────

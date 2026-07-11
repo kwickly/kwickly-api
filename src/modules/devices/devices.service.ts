@@ -59,7 +59,7 @@ export class DevicesService {
     const [user] = await db
       .select()
       .from(users)
-      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId), eq(users.isActive, true)));
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId), eq(users.status, 'ACTIVE')));
 
     if (!user || !user.posPin) {
       throw new Error('Invalid user or PIN not set');

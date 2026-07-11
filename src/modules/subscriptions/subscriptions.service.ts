@@ -15,7 +15,7 @@ export class SubscriptionsService {
       isNull(subscriptionPlans.deletedAt),
     ];
     if (!includeInactive) {
-      conditions.push(eq(subscriptionPlans.isActive, true));
+      conditions.push(eq(subscriptionPlans.status, 'ACTIVE'));
     }
     if (branchId) {
       conditions.push(eq(subscriptionPlans.branchId, branchId));
@@ -52,7 +52,7 @@ export class SubscriptionsService {
       .update(subscriptionPlans)
       .set({
         deletedAt: new Date(),
-        isActive: false,
+        status: 'ARCHIVED',
         updatedAt: new Date(),
       })
       .where(and(eq(subscriptionPlans.id, planId), eq(subscriptionPlans.tenantId, tenantId)))

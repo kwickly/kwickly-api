@@ -174,7 +174,7 @@ export class StaffService {
       roleId: users.roleId,
       roleName: roles.name,
       pin: users.posPin,
-      isActive: users.isActive,
+      status: users.status,
       salaryType: staffProfiles.salaryType,
       baseSalary: staffProfiles.baseSalary,
       hourlyRate: staffProfiles.hourlyRate,
@@ -241,20 +241,20 @@ export class StaffService {
     phone?: string;
     roleId?: string;
     branchId?: string;
-    isActive?: boolean;
+    status?: 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'ON_LEAVE';
     salaryType?: 'HOURLY' | 'MONTHLY';
     baseSalary?: string;
     hourlyRate?: string;
   }) {
     // 1. Update user record
     let updatedUser;
-    if (payload.name !== undefined || payload.phone !== undefined || payload.roleId !== undefined || payload.isActive !== undefined || payload.branchId !== undefined) {
+    if (payload.name !== undefined || payload.phone !== undefined || payload.roleId !== undefined || payload.status !== undefined || payload.branchId !== undefined) {
       const result = await db.update(users).set({
         name: payload.name,
         phone: payload.phone,
         roleId: payload.roleId,
         branchId: payload.branchId,
-        isActive: payload.isActive,
+        status: payload.status,
         updatedAt: new Date(),
       }).where(and(eq(users.id, staffId), eq(users.tenantId, tenantId))).returning();
       updatedUser = result[0];
@@ -288,7 +288,7 @@ export class StaffService {
       .update(users)
       .set({
         deletedAt: new Date(),
-        isActive: false,
+        status: 'TERMINATED',
       })
       .where(and(eq(users.id, staffId), eq(users.tenantId, tenantId)))
       .returning();

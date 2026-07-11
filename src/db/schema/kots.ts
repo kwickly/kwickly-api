@@ -24,6 +24,7 @@ export const kots = pgTable('kots', {
   completedAt: timestamp('completed_at'),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => ({
   idxBranchCreated: index('idx_kots_branch_created').on(table.branchId, table.createdAt),
 }));

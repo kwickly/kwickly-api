@@ -1,2 +1,0 @@
-CREATE INDEX "idx_orders_tenant_branch_created" ON "orders" USING btree ("tenant_id","branch_id","created_at");--> statement-breakpoint
-CREATE INDEX "idx_kots_branch_created" ON "kots" USING btree ("branch_id","created_at");

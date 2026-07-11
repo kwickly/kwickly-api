@@ -4,7 +4,7 @@ import {
   text,
   timestamp,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 
@@ -23,7 +23,10 @@ export const devices = pgTable('devices', {
   lastSeenAt: timestamp('last_seen_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_devices_tenant_id').on(table.tenantId),
+}));
 
 export const devicesRelations = relations(devices, ({ one }) => ({
   tenant: one(tenants, { fields: [devices.tenantId], references: [tenants.id] }),

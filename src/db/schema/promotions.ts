@@ -7,9 +7,11 @@ import {
   pgEnum,
   decimal,
   integer,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
+export const promotionStatusEnum = pgEnum('promotion_status', ['ACTIVE', 'PAUSED', 'EXPIRED']);
+
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const discountTypeEnum = pgEnum('discount_type', [
@@ -36,11 +38,13 @@ export const coupons = pgTable('coupons', {
   validUntil: timestamp('valid_until'),
   usageLimit: integer('usage_limit'),
   usedCount: integer('used_count').default(0).notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
+  status: promotionStatusEnum('status').default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'), // soft delete
-});
+}, (table) => ({
+  idxTenant: index('idx_coupons_tenant_id').on(table.tenantId),
+}));
 
 /**
  * Staff-facing predefined discounts applied at the POS (e.g., 'Staff Meal 50%')
@@ -54,11 +58,13 @@ export const predefinedDiscounts = pgTable('predefined_discounts', {
   discountType: discountTypeEnum('discount_type').notNull(),
   discountValue: decimal('discount_value', { precision: 10, scale: 2 }).notNull(),
   requiresManagerPin: boolean('requires_manager_pin').default(false).notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
+  status: promotionStatusEnum('status').default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => ({
+  idxTenant: index('idx_predefinedDiscounts_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const couponsRelations = relations(coupons, ({ one }) => ({

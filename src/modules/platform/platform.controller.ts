@@ -97,7 +97,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
         t.Literal('GROWTH'),
         t.Literal('ENTERPRISE')
       ]),
-      isActive: t.Boolean(),
+      status: t.Optional(t.Union([t.Literal('ACTIVE'), t.Literal('SUSPENDED'), t.Literal('TERMINATED')])),
     }))
   })
 

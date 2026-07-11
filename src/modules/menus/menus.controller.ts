@@ -80,7 +80,7 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     body: t.Partial(t.Object({
       name: t.String(),
       price: t.String(),
-      isActive: t.Boolean(),
+      status: t.Union([t.Literal('AVAILABLE'), t.Literal('OUT_OF_STOCK'), t.Literal('HIDDEN')]),
     }))
   })
   
@@ -105,7 +105,7 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     body: t.Partial(t.Object({
       name: t.String(),
       sortOrder: t.Number(),
-      isActive: t.Boolean()
+      status: t.Union([t.Literal('AVAILABLE'), t.Literal('OUT_OF_STOCK'), t.Literal('HIDDEN')])
     }))
   })
 

@@ -111,7 +111,7 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       phone: t.Optional(t.String()),
       roleId: t.Optional(t.String()),
       branchId: t.Optional(t.String()),
-      isActive: t.Optional(t.Boolean()),
+      status: t.Optional(t.Union([t.Literal('ACTIVE'), t.Literal('SUSPENDED'), t.Literal('TERMINATED'), t.Literal('ON_LEAVE')])),
       salaryType: t.Optional(t.Union([t.Literal('HOURLY'), t.Literal('MONTHLY')])),
       baseSalary: t.Optional(t.String()),
       hourlyRate: t.Optional(t.String()),

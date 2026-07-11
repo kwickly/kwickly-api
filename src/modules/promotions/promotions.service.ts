@@ -13,7 +13,7 @@ export class PromotionsService {
       .where(
         and(
           eq(coupons.tenantId, tenantId),
-          eq(coupons.isActive, true),
+          eq(coupons.status, 'ACTIVE'),
           isNull(coupons.deletedAt)
         )
       )
@@ -54,7 +54,7 @@ export class PromotionsService {
       .where(
         and(
           eq(predefinedDiscounts.tenantId, tenantId),
-          eq(predefinedDiscounts.isActive, true),
+          eq(predefinedDiscounts.status, 'ACTIVE'),
           isNull(predefinedDiscounts.deletedAt)
         )
       )

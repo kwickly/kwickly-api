@@ -6,7 +6,7 @@ import {
   timestamp,
   pgEnum,
   jsonb,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { branches } from './branches.ts';
 import { users } from './users.ts';
@@ -19,6 +19,12 @@ export const tenantPlanEnum = pgEnum('tenant_plan', [
   'ENTERPRISE',
 ]);
 
+export const tenantStatusEnum = pgEnum('tenant_status', [
+  'ACTIVE',
+  'SUSPENDED',
+  'TERMINATED',
+]);
+
 // ─── Tenants Table ────────────────────────────────────────────────────────────
 export const tenants = pgTable('tenants', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -29,10 +35,12 @@ export const tenants = pgTable('tenants', {
   address:     text('address'),
   baseCurrency: text('base_currency').default('INR').notNull(),
   plan:        tenantPlanEnum('plan').default('FREE').notNull(),
-  isActive:    boolean('is_active').default(true).notNull(),
+  status:      tenantStatusEnum('status').default('ACTIVE').notNull(),
   annualPaidLeaveLimit: text('annual_paid_leave_limit').default('15').notNull(),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
+  suspendedAt: timestamp('suspended_at'),
+  terminatedAt: timestamp('terminated_at'),
   deletedAt:   timestamp('deleted_at'), // soft delete
 });
 
@@ -59,7 +67,10 @@ export const tenantBrandings = pgTable('tenant_brandings', {
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'), // soft delete
+}, (table) => ({
+  idxTenant: index('idx_tenantBrandings_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const tenantsRelations = relations(tenants, ({ one, many }) => ({

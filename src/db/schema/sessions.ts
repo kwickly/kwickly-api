@@ -1,6 +1,6 @@
 import {
   uuid,
-  pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+  pgTable, text, timestamp, boolean , index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
 
@@ -14,6 +14,7 @@ export const otpCodes = pgTable('otp_codes', {
   expiresAt: timestamp('expires_at').notNull(),
   usedAt:    timestamp('used_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Refresh Token Sessions ──────────────────────────────────────────────────
@@ -27,6 +28,7 @@ export const sessions = pgTable('sessions', {
   isRevoked:    boolean('is_revoked').default(false).notNull(),
   expiresAt:    timestamp('expires_at').notNull(),
   createdAt:    timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ─── Relations ──────────────────────────────────────────────────────────────

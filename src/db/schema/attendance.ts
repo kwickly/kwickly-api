@@ -5,7 +5,7 @@ import {
   boolean,
   timestamp,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { branches } from './branches';
@@ -29,8 +29,11 @@ export const attendanceLogs = pgTable('attendance_logs', {
   syncedAt:       timestamp('synced_at').defaultNow().notNull(),  // when it hit the server
   isOfflineSync:  boolean('is_offline_sync').default(false).notNull(), // was this scanned offline and synced later?
   deviceId:       uuid('device_id'),                              // for fraud/audit tracking
-  note:           text('note'),                                   // optional staff note
-});
+  note:           text('note'),                                   // optional staff note,
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_attendanceLogs_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 export const attendanceLogsRelations = relations(attendanceLogs, ({ one }) => ({

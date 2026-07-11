@@ -5,10 +5,12 @@ import {
   boolean,
   timestamp,
   pgEnum,
-} from 'drizzle-orm/pg-core';
+  index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { roles } from './rbac';
+export const userStatusEnum = pgEnum('userStatusEnum', ['ACTIVE', 'SUSPENDED', 'TERMINATED', 'ON_LEAVE']);
+
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const userRoleEnum = pgEnum('user_role', [
@@ -36,12 +38,14 @@ export const users = pgTable('users', {
   roleId:      uuid('role_id').references(() => roles.id), // Dynamic custom roles
   posPin:      text('pos_pin'), // Hashed 4-digit PIN for fast POS login
   avatarUrl:   text('avatar_url'),
-  isActive:    boolean('is_active').default(true).notNull(),
+  status: userStatusEnum('status').default('ACTIVE').notNull(),
   lastLoginAt: timestamp('last_login_at'),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
   deletedAt:   timestamp('deleted_at'),
-});
+}, (table) => ({
+  idxTenant: index('idx_users_tenant_id').on(table.tenantId),
+}));
 
 // ─── Relations ──────────────────────────────────────────────────────────────
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -56,6 +60,7 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   tokenHash: text('token_hash').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
