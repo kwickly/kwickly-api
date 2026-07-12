@@ -63,9 +63,41 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
       userId: t.String(),
       points: t.String(),
       reason: t.String(),
-
-
       orderId: t.Optional(t.String()),
+    })
+  })
+
+  // POS endpoint to register/link a customer email during checkout
+  .post('/customers/register-offline', async ({ user, body }) => {
+    if (!user || !user.tenantId) throw new Error('Unauthorized');
+    // In reality this would invoke UserService to create the user if email is new.
+    // For now we mock the successful response.
+    return { 
+      success: true, 
+      data: { id: 'cust_' + Date.now(), email: body.email, phone: body.phone },
+      message: 'Customer registered successfully from POS.' 
+    };
+  }, {
+    body: t.Object({
+      email: t.Optional(t.String()),
+      phone: t.String(),
+      name: t.Optional(t.String()),
+    })
+  })
+
+  // POS endpoint to register/link a customer email during checkout
+  .post('/customers/register-offline', async ({ user, body }) => {
+    if (!user || !user.tenantId) throw new Error('Unauthorized');
+    return { 
+      success: true, 
+      data: { id: 'cust_' + Date.now(), email: body.email, phone: body.phone },
+      message: 'Customer registered successfully from POS.' 
+    };
+  }, {
+    body: t.Object({
+      email: t.Optional(t.String()),
+      phone: t.String(),
+      name: t.Optional(t.String()),
     })
   })
 

@@ -102,6 +102,40 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
   })
 
   /**
+   * GET /v1/platform/tenants/:id/settings
+   * Retrieve tenant settings as a platform admin.
+   */
+  .get('/tenants/:id/settings', async ({ params: { id }, set }) => {
+    const [tenant] = await require('../../db/index.ts').db.select().from(require('../../db/schema/index.ts').tenants).where(require('drizzle-orm').eq(require('../../db/schema/index.ts').tenants.id, id));
+    if (!tenant) {
+      set.status = 404;
+      return { success: false, error: 'Tenant not found' };
+    }
+    return { success: true, data: tenant };
+  })
+
+  /**
+   * PATCH /v1/platform/tenants/:id/settings
+   * Update tenant settings as a platform admin.
+   */
+  .patch('/tenants/:id/settings', async ({ params: { id }, body, set }) => {
+    const data = await platformService.updateTenant(id, body as any); // Reusing updateTenant which merges to tenants table
+    return { success: true, data, message: 'Tenant settings updated successfully' };
+  }, {
+    body: t.Partial(t.Object({
+      name: t.String(),
+      brandColor: t.String(),
+      logoUrl: t.Optional(t.String({ format: 'uri' })),
+      logoDarkUrl: t.Optional(t.String({ format: 'uri' })),
+      faviconUrl: t.Optional(t.String({ format: 'uri' })),
+      themeMode: t.Optional(t.Union([t.Literal('system'), t.Literal('light'), t.Literal('dark')])),
+      themeConfig: t.Optional(t.Any()),
+      phone: t.String(),
+      email: t.String(),
+    }))
+  })
+
+  /**
    * DELETE /v1/platform/tenants/:id
    * Soft delete a tenant.
    */

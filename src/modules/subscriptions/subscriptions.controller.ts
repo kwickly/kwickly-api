@@ -57,6 +57,17 @@ export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' 
           qrData: t.String(),
         })
       })
+      .post('/staff/sell-offline', async ({ user, body }) => {
+        if (!user || !user.tenantId) throw new Error('Unauthorized');
+        // Register cash payment logic and assign subscription to customer
+        const sub = await subscriptionsService.purchasePlan(user.tenantId, body.customerId, body.planId);
+        return { success: true, data: sub, message: 'Offline subscription sold successfully.' };
+      }, {
+        body: t.Object({
+          customerId: t.String(),
+          planId: t.String(),
+        })
+      })
   )
   
   // Create, Edit, Delete a subscription plan (restricted to Super Admins & Tenant Owners)

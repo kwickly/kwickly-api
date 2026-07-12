@@ -7,7 +7,7 @@
 
 ## 📖 Overview
 
-Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), Menu WebSocket Syncing, automated Payroll & Timesheets (via POS PIN integration), comprehensive Inventory Tracking, and CRM.
+Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), Menu WebSocket Syncing, automated Payroll & Timesheets (via POS PIN integration), comprehensive Inventory Tracking, and Omnichannel CRM (Digital Wallets & Offline Subscriptions).
 
 Built for extreme low-latency at the edge, the API runs on **Bun** and leverages **ElysiaJS** to deliver near-instant responses to customer mobile apps, staff devices, and admin web dashboards.
 
@@ -64,6 +64,7 @@ The API will be available at `http://localhost:3000`. Swagger documentation is a
 The API provides robust endpoints to support white-labeled interfaces:
 - **Tenant Customization API**: Exposes `GET` and `PATCH` `/v1/tenant/settings` endpoints allowing tenant administrators to customize names, logos, contact details, and brand colors.
 - **Dynamic Session Injection**: Returns `tenantDetails` (branding configurations) during login, session refresh, and OTP verification to support client-side variable injection.
+- **Wildcard Subdomains**: Supports true multi-tenancy by using wildcard subdomains (e.g. `restaurant.kwickly.in`), passing the domain natively as the host identifier for the branding API instead of relying on URL slug paths.
 - **Administrative Impersonation**: Built-in authorization bypass within `rbac.guard.ts` allows Platform Owners and Super Admins to safely impersonate any tenant workspace (Inspection Mode) and retrieve their specific branding assets seamlessly.
 
 ## 🏗 Architectural Guidelines
