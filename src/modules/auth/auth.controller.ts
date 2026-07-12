@@ -23,7 +23,7 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       let slug = hostname;
       // Handle kwickly subdomains (e.g., brand.kwickly.com -> brand)
       if (hostname.includes('kwickly.com') || hostname.includes('localhost')) {
-        slug = hostname.split('.')[0];
+        slug = hostname.split('.')[0] || hostname;
       }
 
       const tenantResult = await db.select({

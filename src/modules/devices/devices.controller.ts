@@ -5,7 +5,6 @@ import { checkPermission } from '../auth/rbac.guard';
 import { db } from '../../db';
 import { devices, users } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { logAudit } from '../../shared/audit';
 
 const devicesService = new DevicesService();
 
@@ -37,17 +36,7 @@ export const devicesController = new Elysia({ prefix: '/devices' })
       type: body.type as 'POS' | 'KDS',
     });
 
-    await logAudit({
-      tenantId: user.tenantId,
-      userId: user.sub,
-      action: 'device.register',
-      method: 'POST',
-      path: '/v1/devices',
-      ipAddress: request.headers.get('x-forwarded-for') || null,
-      userAgent: request.headers.get('user-agent'),
-      statusCode: 201,
-      metadata: { deviceId: device?.id },
-    });
+
 
     return { data: device };
   }, {
@@ -65,17 +54,7 @@ export const devicesController = new Elysia({ prefix: '/devices' })
     
     const device = await devicesService.revokeDevice(user.tenantId, id);
 
-    await logAudit({
-      tenantId: user.tenantId,
-      userId: user.sub,
-      action: 'device.revoke',
-      method: 'PATCH',
-      path: `/v1/devices/${id}/revoke`,
-      ipAddress: request.headers.get('x-forwarded-for') || null,
-      userAgent: request.headers.get('user-agent'),
-      statusCode: 200,
-      metadata: { deviceId: device?.id },
-    });
+
 
     return { data: device, message: 'Device revoked successfully' };
   }, {

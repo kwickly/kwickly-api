@@ -1,3 +1,11 @@
+# Kwickly API - Agent Instructions (CLAUDE.md)
+
+Welcome! If you are an AI agent assisting with the Kwickly API, you must adhere to the strict architectural guidelines established in this document to maintain consistency, security, and performance.
+
+## 1. Core Imperative: Review Documentation
+Before making significant architectural changes or creating new modules, you **MUST** read `docs/README.md` first to understand the project's historical progression, superseded decisions, and chronological timeline. Our docs are organized by domain and chronology.
+
+## 2. Environment Rules
 
 Default to using Bun instead of Node.js.
 

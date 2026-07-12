@@ -1,21 +1,32 @@
-# Kwickly API Documentation Master Index & Audit Log
+# Kwickly API Documentation
 
-Welcome to the Kwickly API docs folder. We maintain a strict chronological Architecture Decision Record (ADR) format here, mirroring the `kwickly-admin-web` repository structure.
+Welcome to the documentation for the Kwickly API repository. 
+This folder contains Architecture Decision Records (ADRs), database schema standards, and implementation plans.
 
-## How to Maintain This Folder
+## 📂 Documentation Structure
+To prevent documentation fatigue, we organize files by **Domain (Topic) -> Chronological Order**. 
+Deprecated or superseded decisions are moved to the `archive/` folder.
 
-1. **New Topics:** Any new research, tracker, or architectural decision MUST be placed in a new folder.
-2. **Naming Convention:** Use the ISO 8601 date standard in kebab-case format. Example: `2026-07-12-database-schema-standards`. This guarantees perfect chronological sorting.
-3. **Supersession Rule:** When a document is ruled out or replaced, you MUST edit the old document to include a `> [!WARNING] SUPERSEDED` block at the top, pointing to the new document. You must also record this change in the **Audit Log** below.
+### 🏛️ Architecture & Infrastructure
+Decisions regarding the core backend systems, API implementation, and deployment context.
+- [2026-06-23: API Implementation](architecture-and-infrastructure/2026-06-23-api-implementation/api-implementation-phases.md)
+- [2026-06-28: Deployment and Context](architecture-and-infrastructure/2026-06-28-deployment-and-context/deployment-architecture.md)
 
-## Project Timeline & Master Index
+### 🗄️ Database & Schema
+Decisions regarding the PostgreSQL database, Drizzle ORM, state management, and conventions.
+- [2026-07-12: Database Schema Standards](database-and-schema/2026-07-12-database-schema-standards/database-standards.md)
+- [2026-07-12: Global Status Enums](database-and-schema/2026-07-12-global-status-enums/global-status-enums.md)
 
-- **[2026-06-17-initial-testing](./2026-06-17-initial-testing)**: Initial legacy testing progress tracker.
-- **[2026-06-23-api-implementation](./2026-06-23-api-implementation)**: Original API implementation phases and roadmap.
-- **[2026-06-28-deployment-and-context](./2026-06-28-deployment-and-context)**: Infrastructure, deployment architecture, and context retrieval strategies.
-- **[2026-07-12-database-schema-standards](./2026-07-12-database-schema-standards)**: Definitive guidelines on Kwickly's database architecture, including global soft-deletes, multi-tenant indexing (`idxTenant`), and tenant lifecycle tracking (Suspension & Termination).
+### 🧪 Testing & QA
+- [2026-06-17: Initial Testing](testing-and-qa/2026-06-17-initial-testing/testing-progress.md)
 
-## Audit Log of Changed Decisions
+### 📦 Archive
+*(Superseded or deprecated decisions live in `docs/archive/`)*
 
-- **12th Jul, 26**: Transitioned `kwickly-api/docs` into a chronological ADR structure to match the frontend repo standards.
-- **[2026-07-12-global-status-enums](./2026-07-12-global-status-enums)**: Industry standard Global Status Enums architecture and Soft Deletes documentation.
+---
+
+**Rule of Thumb for adding new Docs:**
+1. Pick the correct domain folder (or create one if it doesn't fit).
+2. Create a folder named `YYYY-MM-DD-short-topic-name`.
+3. Add your markdown file inside.
+4. Update this `README.md` to link to your new file!

@@ -2,7 +2,6 @@ import { Elysia, t } from 'elysia';
 import { CrmService } from './crm.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { requirePermission } from '../auth/rbac.guard.ts';
-import { logAudit } from '../../shared/audit.ts';
 
 const crmService = new CrmService();
 
@@ -80,17 +79,7 @@ export const crmController = new Elysia({ prefix: '/v1/crm' })
       body.reason
     );
 
-    await logAudit({
-      tenantId: user.tenantId,
-      userId: user.sub,
-      action: 'wallet.adjust',
-      method: 'POST',
-      path: `/v1/crm/customers/${params.id}/wallet`,
-      ipAddress: request.headers.get('x-forwarded-for') || null,
-      userAgent: request.headers.get('user-agent'),
-      statusCode: 200,
-      metadata: { targetUserId: params.id, amount: body.amount, type: body.type },
-    });
+
 
     return { success: true, data: result };
   }, {
