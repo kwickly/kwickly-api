@@ -4,6 +4,9 @@ import { requirePermission } from '../auth/rbac.guard.ts';
 import { MenusService } from './menus.service.ts';
 
 const menusService = new MenusService();
+import { db } from '../../db';
+import { tenants } from '../../db/schema/tenants';
+import { eq } from 'drizzle-orm';
 
 /**
  * Menus Controller
@@ -11,6 +14,35 @@ const menusService = new MenusService();
  * Base Path: /v1/menus
  */
 export const menusController = new Elysia({ prefix: '/v1/menus' })
+  /**
+   * GET /v1/menus/public/:slug
+   * Public-facing endpoint for the customer app to fetch the menu by tenant slug.
+   * Does NOT require authentication.
+   */
+  .get('/public/:slug', async ({ params: { slug }, query }) => {
+    // Look up tenantId by slug
+    const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
+    if (!tenant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+    
+    // Default to a 'default' branch if not provided (for single-branch tenants)
+    const branchId = query.branchId ? (query.branchId as string) : 'default';
+    const page = query.page ? parseInt(query.page as string, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit as string, 10) : 100; // Large limit for public menu
+    
+    const result = await menusService.getMenu(tenant.id, branchId, page, limit, query.search as string | undefined);
+    return { success: true, ...result };
+  }, {
+    query: t.Object({
+      branchId: t.Optional(t.String()),
+      page: t.Optional(t.String()),
+      limit: t.Optional(t.String()),
+      search: t.Optional(t.String()),
+    })
+  })
+
+  // --- Auth Required Below Here ---
   .use(requireAuth)
 
   /**
