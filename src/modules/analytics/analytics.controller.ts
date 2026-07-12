@@ -106,4 +106,62 @@ export const analyticsController = new Elysia({ prefix: '/v1/analytics' })
     query: t.Object({
       branchId: t.String()
     })
+  })
+
+  /**
+   * GET /v1/analytics/weekly-revenue
+   * Returns daily revenue totals for the last N days (default 30).
+   * Used to render the revenue trend area chart.
+   */
+  .get('/weekly-revenue', async ({ user, query, set }) => {
+    if (!user?.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!uuidRegex.test(query.branchId)) {
+      return { success: true, data: [] };
+    }
+
+    const data = await analyticsService.getWeeklyRevenue(
+      user.tenantId,
+      query.branchId,
+      query.days ? parseInt(query.days, 10) : 30
+    );
+    return { success: true, data };
+  }, {
+    query: t.Object({
+      branchId: t.String(),
+      days: t.Optional(t.String()),
+    })
+  })
+
+  /**
+   * GET /v1/analytics/hourly-sales
+   * Returns revenue bucketed by hour of day — used for peak-hour heatmap chart.
+   */
+  .get('/hourly-sales', async ({ user, query, set }) => {
+    if (!user?.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!uuidRegex.test(query.branchId)) {
+      return { success: true, data: [] };
+    }
+
+    const data = await analyticsService.getHourlySales(
+      user.tenantId,
+      query.branchId,
+      query.days ? parseInt(query.days, 10) : 7
+    );
+    return { success: true, data };
+  }, {
+    query: t.Object({
+      branchId: t.String(),
+      days: t.Optional(t.String()),
+    })
   });
+

@@ -5,9 +5,9 @@ export class AnalyticsService {
   /**
    * Calculates total sales, order count, and average order value for a specific branch on a given date.
    * Uses raw SQL for high-performance aggregation.
+   * Note: Drizzle's `sql` template securely handles parameterization to prevent SQL injection.
    */
   async getDailySales(tenantId: string, branchId: string, date: string) {
-    // Note: Drizzle's `sql` template securely handles parameterization to prevent SQL injection.
     const result = await db.execute(sql`
       SELECT 
         COUNT(id) as total_orders,
@@ -21,7 +21,6 @@ export class AnalyticsService {
         AND DATE(created_at) = DATE(${date})
     `);
 
-    // Postgres returns aggregates as strings, so we parse them
     const rows = (result as any).rows || result;
     const row = rows[0] as any;
     return {
@@ -29,6 +28,67 @@ export class AnalyticsService {
       totalSales: parseFloat(row?.total_sales || '0'),
       averageOrderValue: parseFloat(row?.average_order_value || '0'),
     };
+  }
+
+  /**
+   * Returns daily revenue totals for the last N days — used for revenue trend charts.
+   */
+  async getWeeklyRevenue(tenantId: string, branchId: string, days: number = 30) {
+    const result = await db.execute(sql`
+      SELECT 
+        TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
+        TO_CHAR(DATE(created_at), 'DD Mon') as label,
+        COUNT(id) as orders,
+        COALESCE(SUM(total), 0) as revenue
+      FROM orders
+      WHERE 
+        tenant_id = ${tenantId}
+        AND branch_id = ${branchId}
+        AND status = 'delivered'
+        AND created_at >= NOW() - (${days} || ' days')::interval
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) ASC
+    `);
+
+    const rows = (result as any).rows || result;
+    return rows.map((row: any) => ({
+      date: row.date,
+      label: row.label,
+      revenue: parseFloat(row.revenue || '0'),
+      orders: parseInt(row.orders || '0', 10),
+    }));
+  }
+
+  /**
+   * Returns revenue bucketed by hour of day — used for peak-hour heatmap.
+   */
+  async getHourlySales(tenantId: string, branchId: string, days: number = 7) {
+    const result = await db.execute(sql`
+      SELECT 
+        EXTRACT(HOUR FROM created_at) as hour,
+        COALESCE(SUM(total), 0) as revenue,
+        COUNT(id) as orders
+      FROM orders
+      WHERE 
+        tenant_id = ${tenantId}
+        AND branch_id = ${branchId}
+        AND status = 'delivered'
+        AND created_at >= NOW() - (${days} || ' days')::interval
+      GROUP BY hour
+      ORDER BY hour ASC
+    `);
+
+    const rows = (result as any).rows || result;
+    // Fill all 24 hours so the chart always has a complete dataset
+    return Array.from({ length: 24 }, (_, h) => {
+      const match = rows.find((r: any) => parseInt(r.hour) === h);
+      return {
+        hour: h,
+        label: `${String(h).padStart(2, '0')}:00`,
+        revenue: match ? parseFloat(match.revenue || '0') : 0,
+        orders: match ? parseInt(match.orders || '0', 10) : 0,
+      };
+    });
   }
 
   /**
@@ -61,10 +121,9 @@ export class AnalyticsService {
 
   /**
    * Mock AI forecasting based on last 7 days of real data.
+   * Production: replace with a Facebook Prophet or ARIMA time-series model.
    */
   async getSalesForecast(tenantId: string, branchId: string) {
-    // In a production app, this would use a time-series model.
-    // Here we fetch actuals for last 5 days and add a mock 2-day forecast.
     const result = await db.execute(sql`
       SELECT 
         TO_CHAR(created_at, 'Dy') as day,
@@ -87,20 +146,19 @@ export class AnalyticsService {
       return {
         date: day,
         actual: actual,
-        forecast: (actual || 200) * (1 + (Math.random() * 0.1)) // Mock 10% variance forecast
+        forecast: (actual || 200) * (1 + (Math.random() * 0.1))
       };
     });
   }
 
   /**
    * AI Combo Suggestions based on items frequently bought together.
+   * Production: use Apriori or FP-Growth algorithm.
    */
-  async getSuggestedCombos(tenantId: string, branchId: string) {
-    // Simple "Frequent Itemset" mock query.
-    // In production, use Apriori or FP-Growth algorithm.
+  async getSuggestedCombos(tenantId: string, _branchId: string) {
     return [
-      { id: 'suggested1', name: 'Burger + Fries + Cola Combo', items: ['Cheese Burger', 'French Fries', 'Coca Cola'], recommendedPrice: '249', confidence: '94%', lift: '+15% sales' },
-      { id: 'suggested2', name: 'Taco Meal Combo', items: ['Veg Quesadilla', 'Peri Peri Fries', 'Lemonade'], recommendedPrice: '199', confidence: '88%', lift: '+12% sales' }
+      { id: 'suggested1', name: 'Burger + Fries + Cola Combo', items: ['Cheese Burger', 'French Fries', 'Coca Cola'], recommendedPrice: 249, confidence: '94%', lift: '+15% sales' },
+      { id: 'suggested2', name: 'Taco Meal Combo', items: ['Veg Quesadilla', 'Peri Peri Fries', 'Lemonade'], recommendedPrice: 199, confidence: '88%', lift: '+12% sales' }
     ];
   }
 }
