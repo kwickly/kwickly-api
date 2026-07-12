@@ -106,3 +106,5 @@ export type MenuCategory    = typeof menuCategories.$inferSelect;
 export type NewMenuCategory = typeof menuCategories.$inferInsert;
 export type MenuItemAddon    = typeof menuItemAddons.$inferSelect;
 export type NewMenuItemAddon = typeof menuItemAddons.$inferInsert;
+export type MenuItemVariant    = typeof menuItemVariants.$inferSelect;
+export type NewMenuItemVariant = typeof menuItemVariants.$inferInsert;

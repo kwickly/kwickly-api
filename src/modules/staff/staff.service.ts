@@ -363,6 +363,94 @@ export class StaffService {
   }
 
   /**
+   * Fetch timesheets for a specific tenant
+   */
+  async getTenantTimesheets(tenantId: string) {
+    const records = await db.query.timesheets.findMany({
+      where: eq(timesheets.tenantId, tenantId),
+      orderBy: (ts, { desc }) => [desc(ts.createdAt)],
+      with: {
+        staff: {
+          columns: { name: true, role: true, email: true }
+        },
+        reviewer: {
+          columns: { name: true }
+        }
+      }
+    });
+
+    return records.map(r => ({
+      id: r.id,
+      staffId: r.staffId,
+      staffName: r.staff.name,
+      clockIn: r.clockIn,
+      clockOut: r.clockOut,
+      status: r.status,
+      totalHours: r.totalHours ? Number(r.totalHours) : 0,
+      reviewerNotes: r.reviewerNotes
+    }));
+  }
+
+  /**
+   * Staff clock in
+   */
+  async clockIn(tenantId: string, staffId: string) {
+    // Check if staff already has an open timesheet
+    const existing = await db.query.timesheets.findFirst({
+      where: and(
+        eq(timesheets.tenantId, tenantId),
+        eq(timesheets.staffId, staffId),
+        isNull(timesheets.clockOut)
+      )
+    });
+
+    if (existing) {
+      throw new Error('Staff member is already clocked in');
+    }
+
+    const [newTs] = await db.insert(timesheets).values({
+      tenantId,
+      staffId,
+      clockIn: new Date(),
+      status: 'PENDING'
+    }).returning();
+
+    return newTs;
+  }
+
+  /**
+   * Staff clock out
+   */
+  async clockOut(tenantId: string, staffId: string) {
+    // Find the open timesheet
+    const existing = await db.query.timesheets.findFirst({
+      where: and(
+        eq(timesheets.tenantId, tenantId),
+        eq(timesheets.staffId, staffId),
+        isNull(timesheets.clockOut)
+      )
+    });
+
+    if (!existing) {
+      throw new Error('No open timesheet found to clock out from');
+    }
+
+    const clockOutTime = new Date();
+    const diffMs = clockOutTime.getTime() - existing.clockIn.getTime();
+    const totalHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+
+    const [updatedTs] = await db.update(timesheets).set({
+      clockOut: clockOutTime,
+      totalHours,
+      updatedAt: new Date()
+    })
+    .where(eq(timesheets.id, existing.id))
+    .returning();
+
+    return updatedTs;
+  }
+
+  /**
    * Update timesheet status and remarks
    */
   async updateTimesheet(id: string, payload: {

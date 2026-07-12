@@ -8,4 +8,5 @@ export const eventBus = new EventEmitter();
 export const EVENTS = {
   NEW_KOT: 'new_kot',
   KOT_UPDATED: 'kot_updated',
+  MENU_SYNC: 'menu_sync',
 };

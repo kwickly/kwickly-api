@@ -40,6 +40,7 @@ import { notificationsController } from './modules/notifications/notifications.c
 import { usersController } from './modules/users/users.controller.ts';
 import { supportController } from './modules/support/support.controller.ts';
 import { platformSupportController } from './modules/support/platform-support.controller.ts';
+import { syncController } from './modules/sync/sync.controller.ts';
 
 export const app = new Elysia()
   .use(cors())
@@ -132,6 +133,7 @@ export const app = new Elysia()
       .use(notificationsController)
       .use(supportController)
       .use(platformSupportController)
+      .use(syncController)
   )
   
   .use(websocketPlugin);

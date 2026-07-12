@@ -1,7 +1,7 @@
 import { eq, and, isNull, sql, ilike } from 'drizzle-orm';
 import { db } from '../../db';
-import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon } from '../../db/schema/menus';
-import { menuCategories, menuItems, menuItemAddons } from '../../db/schema/menus';
+import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon, NewMenuItemVariant } from '../../db/schema/menus';
+import { menuCategories, menuItems, menuItemAddons, menuItemVariants } from '../../db/schema/menus';
 import { withCache, redis } from '../../shared/redis';
 
 /**
@@ -63,10 +63,17 @@ export class MenusService {
         .from(menuItems)
         .where(itemsConditions);
 
+      const allVariants = await db.select().from(menuItemVariants).where(isNull(menuItemVariants.deletedAt));
+      const allAddons = await db.select().from(menuItemAddons).where(isNull(menuItemAddons.deletedAt));
+
       // 3. Assemble nested structure
       const data = categories.map(category => ({
         ...category,
-        items: items.filter(i => i.categoryId === category.id)
+        items: items.filter(i => i.categoryId === category.id).map(item => ({
+          ...item,
+          variants: allVariants.filter(v => v.menuItemId === item.id),
+          addons: allAddons.filter(a => a.menuItemId === item.id || a.menuItemId === null)
+        }))
       }));
 
       return {
@@ -242,6 +249,39 @@ export class MenusService {
       .returning();
 
     // Invalidate Redis cache
+    await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
+    return deleted;
+  }
+
+  /**
+   * Creates a new Menu Item Variant.
+   */
+  async createVariant(tenantId: string, branchId: string, data: NewMenuItemVariant) {
+    const [variant] = await db.insert(menuItemVariants).values(data).returning();
+    await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
+    return variant;
+  }
+
+  /**
+   * Updates an existing Menu Item Variant.
+   */
+  async updateVariant(tenantId: string, branchId: string, id: string, data: Partial<NewMenuItemVariant>) {
+    const [updated] = await db.update(menuItemVariants)
+      .set(data)
+      .where(eq(menuItemVariants.id, id))
+      .returning();
+    await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
+    return updated;
+  }
+
+  /**
+   * Soft deletes a Menu Item Variant.
+   */
+  async deleteVariant(tenantId: string, branchId: string, id: string) {
+    const [deleted] = await db.update(menuItemVariants)
+      .set({ deletedAt: new Date() })
+      .where(eq(menuItemVariants.id, id))
+      .returning();
     await redis.del(`menu:tenant:${tenantId}:branch:${branchId}`);
     return deleted;
   }

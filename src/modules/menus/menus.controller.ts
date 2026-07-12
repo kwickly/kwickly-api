@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { requirePermission } from '../auth/rbac.guard.ts';
 import { MenusService } from './menus.service.ts';
+import { eventBus, EVENTS } from '../../shared/events.ts';
 
 const menusService = new MenusService();
 import { db } from '../../db';
@@ -180,4 +181,59 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
     })
+  })
+
+  /**
+   * POST /v1/menus/items/:id/variants
+   * Creates a new variant for a menu item.
+   */
+  .post('/items/:id/variants', async ({ params: { id }, body, user, headers }) => {
+    const branchId = headers['x-branch-id'] || 'default';
+    const data = await menusService.createVariant(user!.tenantId!, branchId, {
+      ...body,
+      menuItemId: id,
+    });
+    return { success: true, data, message: 'Variant created' };
+  }, {
+    body: t.Object({
+      name: t.String(),
+      priceDelta: t.String(),
+      isDefault: t.Optional(t.Boolean()),
+    })
+  })
+
+  /**
+   * PATCH /v1/menus/variants/:id
+   * Updates a variant.
+   */
+  .patch('/variants/:id', async ({ params: { id }, body, user, headers }) => {
+    const branchId = headers['x-branch-id'] || 'default';
+    const data = await menusService.updateVariant(user!.tenantId!, branchId, id, body);
+    return { success: true, data, message: 'Variant updated' };
+  }, {
+    body: t.Partial(t.Object({
+      name: t.String(),
+      priceDelta: t.String(),
+      isDefault: t.Boolean(),
+    }))
+  })
+
+  /**
+   * DELETE /v1/menus/variants/:id
+   * Soft deletes a variant.
+   */
+  .delete('/variants/:id', async ({ params: { id }, user, headers }) => {
+    const branchId = headers['x-branch-id'] || 'default';
+    const data = await menusService.deleteVariant(user!.tenantId!, branchId, id);
+    return { success: true, data, message: 'Variant deleted' };
+  })
+
+  /**
+   * POST /v1/menus/sync/:branchId
+   * Emits a WebSocket event to all devices connected to the branch's room.
+   */
+  .post('/sync/:branchId', async ({ params: { branchId }, user }) => {
+    // Fire event bus which is wired to WebSockets in index.ts
+    eventBus.emit(EVENTS.MENU_SYNC, { branchId });
+    return { success: true, message: 'Sync event dispatched' };
   });

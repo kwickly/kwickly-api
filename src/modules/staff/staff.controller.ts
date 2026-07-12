@@ -143,17 +143,53 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     beforeHandle: [checkPermission('staff:write')]
   })
   
-  .get('/timesheets', async () => {
-    return { success: true, data: [] };
+  .get('/timesheets', async ({ user, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const timesheets = await staffService.getTenantTimesheets(user.tenantId);
+    return { success: true, data: timesheets };
   }, {
     beforeHandle: [checkPermission('staff:read')]
   })
 
-  .patch('/timesheets/:id', async ({ body }) => {
-    return { success: true, data: { id: 'stub', status: body.status } };
+  .patch('/timesheets/:id', async ({ user, params, body, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const updated = await staffService.updateTimesheet(params.id, {
+      status: body.status,
+      reviewerNotes: body.reviewerNotes,
+      reviewedBy: user.id
+    });
+    return { success: true, data: updated };
   }, {
     beforeHandle: [checkPermission('staff:write')],
     body: t.Object({
-      status: t.Union([t.Literal('APPROVED'), t.Literal('REJECTED')])
+      status: t.Union([t.Literal('PENDING'), t.Literal('APPROVED'), t.Literal('REJECTED')]),
+      reviewerNotes: t.Optional(t.String())
     })
+  })
+  
+  // POS Clock In
+  .post('/timesheets/clock-in', async ({ user, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    // user.id will be the staffId since they authenticated with PIN
+    const ts = await staffService.clockIn(user.tenantId, user.id);
+    return { success: true, data: ts };
+  })
+  
+  // POS Clock Out
+  .post('/timesheets/clock-out', async ({ user, set }) => {
+    if (!user || !user.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+    const ts = await staffService.clockOut(user.tenantId, user.id);
+    return { success: true, data: ts };
   });

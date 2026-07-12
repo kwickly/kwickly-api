@@ -34,6 +34,14 @@ async function bootstrap() {
       }));
     });
 
+    eventBus.on(EVENTS.MENU_SYNC, (payload) => {
+      const topic = `branch:${payload.branchId}:sync`;
+      app.server?.publish(topic, JSON.stringify({
+        type: 'MENU_UPDATED',
+        timestamp: new Date().toISOString()
+      }));
+    });
+
     logger.info(`🦊 Kwickly API is running at ${app.server?.hostname}:${app.server?.port}`);
 
   } catch (error) {

@@ -7,7 +7,7 @@
 
 ## 📖 Overview
 
-Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), payments, staff management (leaves, holidays, timesheets, payroll), inventory, and CRM.
+Kwickly API is a robust, modular monolith designed to power the entire Kwickly B2B SaaS platform. It handles multi-tenant restaurant configurations, secure role-based access control, real-time Kitchen Order Tickets (KOTs), Menu WebSocket Syncing, automated Payroll & Timesheets (via POS PIN integration), comprehensive Inventory Tracking, and CRM.
 
 Built for extreme low-latency at the edge, the API runs on **Bun** and leverages **ElysiaJS** to deliver near-instant responses to customer mobile apps, staff devices, and admin web dashboards.
 
