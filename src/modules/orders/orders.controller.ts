@@ -4,8 +4,51 @@ import { requireAuth } from '../auth/auth.guard.ts';
 import { sanitizeLimit, buildCursorMeta } from '../../shared/pagination.ts';
 
 const ordersService = new OrdersService();
+import { db } from '../../db';
+import { tenants } from '../../db/schema/tenants';
+import { eq } from 'drizzle-orm';
 
 export const ordersController = new Elysia({ prefix: '/v1/orders' })
+  /**
+   * POST /v1/orders/public/:slug
+   * Public-facing endpoint for customers to place orders (e.g. from table QR code).
+   * Does NOT require authentication.
+   */
+  .post('/public/:slug', async ({ params: { slug }, body }) => {
+    // Look up tenantId by slug
+    const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
+    if (!tenant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    // placeOrder internally creates the KOT and emits EVENTS.NEW_KOT
+    // which triggers the WebSocket broadcast in index.ts
+    const result = await ordersService.placeOrder(tenant.id, {
+      ...body,
+      type: 'paid',
+      customerId: undefined,
+    });
+
+    return {
+      success: true,
+      message: 'Order placed successfully',
+      data: result,
+    };
+  }, {
+    body: t.Object({
+      branchId: t.String(),
+      tableNumber: t.Optional(t.String()),
+      note: t.Optional(t.String()),
+      items: t.Array(
+        t.Object({
+          menuItemId: t.String(),
+          quantity: t.Number({ minimum: 1 }),
+        })
+      ),
+    })
+  })
+
+  // --- Auth Required Below Here ---
   .use(requireAuth)
 
   /**

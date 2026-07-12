@@ -32,6 +32,8 @@ import { inventoryController } from './modules/inventory/inventory.controller.ts
 import { staffController } from './modules/staff/staff.controller.ts';
 import { platformStaffController } from './modules/staff/platform-staff.controller.ts';
 import { payrollController } from './modules/payroll/payroll.controller.ts';
+import { rolesController } from './modules/roles/roles.controller.ts';
+import { auditController } from './modules/audit/audit.controller.ts';
 import { leaveController } from './modules/staff/leave.controller.ts';
 import { adsController } from './modules/ads/ads.controller.ts';
 import { notificationsController } from './modules/notifications/notifications.controller.ts';
@@ -123,6 +125,8 @@ export const app = new Elysia()
       .use(staffController)
       .use(platformStaffController)
       .use(payrollController)
+      .use(rolesController)
+      .use(auditController)
       .use(leaveController)
       .use(adsController)
       .use(notificationsController)
