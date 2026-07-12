@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
 import { auditLogs, users } from '../../db/schema/index.ts';
 
@@ -7,6 +7,13 @@ export class TenantService {
    * Retrieves audit logs specifically scoped to the given tenantId.
    */
   async getAuditLogs(tenantId: string, limit: number = 50, offset: number = 0) {
+    const [totalRes] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(auditLogs)
+      .where(eq(auditLogs.tenantId, tenantId));
+    
+    const total = Number(totalRes?.count || 0);
+
     const logs = await db
       .select({
         id: auditLogs.id,
@@ -31,6 +38,14 @@ export class TenantService {
       .offset(offset)
       .execute();
 
-    return logs;
+    return {
+      data: logs,
+      meta: {
+        total,
+        page: Math.floor(offset / limit) + 1,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 }

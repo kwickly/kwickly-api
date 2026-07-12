@@ -162,7 +162,7 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
     const updated = await staffService.updateTimesheet(params.id, {
       status: body.status,
       reviewerNotes: body.reviewerNotes,
-      reviewedBy: user.id
+      reviewedBy: user.sub
     });
     return { success: true, data: updated };
   }, {
@@ -179,8 +179,8 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       set.status = 403;
       return { success: false, error: 'Tenant context required' };
     }
-    // user.id will be the staffId since they authenticated with PIN
-    const ts = await staffService.clockIn(user.tenantId, user.id);
+    // user.sub will be the staffId since they authenticated with PIN
+    const ts = await staffService.clockIn(user.tenantId, user.sub);
     return { success: true, data: ts };
   })
   
@@ -190,6 +190,6 @@ export const staffController = new Elysia({ prefix: '/v1/staff' })
       set.status = 403;
       return { success: false, error: 'Tenant context required' };
     }
-    const ts = await staffService.clockOut(user.tenantId, user.id);
+    const ts = await staffService.clockOut(user.tenantId, user.sub);
     return { success: true, data: ts };
   });

@@ -85,8 +85,8 @@ export const tenantController = new Elysia({ prefix: '/v1/tenant' })
     const limit = query.limit ? parseInt(query.limit as string, 10) : 50;
     const offset = query.offset ? parseInt(query.offset as string, 10) : 0;
     
-    const data = await tenantService.getAuditLogs(user.tenantId, limit, offset);
-    return { success: true, data };
+    const result = await tenantService.getAuditLogs(user.tenantId, limit, offset);
+    return { success: true, data: result.data, meta: result.meta };
   }, {
     query: t.Optional(t.Object({
       limit: t.Optional(t.String()),
