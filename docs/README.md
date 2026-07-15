@@ -11,11 +11,13 @@ Deprecated or superseded decisions are moved to the `archive/` folder.
 Decisions regarding the core backend systems, API implementation, and deployment context.
 - [2026-06-23: API Implementation](architecture-and-infrastructure/2026-06-23-api-implementation/api-implementation-phases.md)
 - [2026-06-28: Deployment and Context](architecture-and-infrastructure/2026-06-28-deployment-and-context/deployment-architecture.md)
+- [2026-07-16: API Client Integration](architecture-and-infrastructure/2026-07-16-api-client-integration/api-client-integration.md)
 
 ### 🗄️ Database & Schema
 Decisions regarding the PostgreSQL database, Drizzle ORM, state management, and conventions.
 - [2026-07-12: Database Schema Standards](database-and-schema/2026-07-12-database-schema-standards/database-standards.md)
 - [2026-07-12: Global Status Enums](database-and-schema/2026-07-12-global-status-enums/global-status-enums.md)
+- [2026-07-16: Automated Schema Compliance](database-and-schema/2026-07-16-automated-schema-compliance/automated-schema-compliance.md)
 
 ### 🧪 Testing & QA
 - [2026-06-17: Initial Testing](testing-and-qa/2026-06-17-initial-testing/testing-progress.md)

@@ -1,0 +1,1 @@
+bun run scripts/check-schema.ts

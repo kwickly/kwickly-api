@@ -137,3 +137,5 @@ export const app = new Elysia()
   )
   
   .use(websocketPlugin);
+
+export type App = typeof app;
