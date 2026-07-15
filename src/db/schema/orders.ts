@@ -38,6 +38,7 @@ export const orders = pgTable('orders', {
   tenantId:       uuid('tenant_id').notNull().references(() => tenants.id),
   branchId:       uuid('branch_id').notNull().references(() => branches.id),
   customerId:     uuid('customer_id').references(() => users.id),          // null for walk-in orders
+  staffId:        uuid('staff_id').references(() => users.id),             // Staff who processed the order
   subscriptionId: uuid('subscription_id').references(() => customerSubscriptions.id), // for subscription_redemption
   type:           orderTypeEnum('type').notNull(),
   status:         orderStatusEnum('status').default('pending').notNull(),
@@ -73,6 +74,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   tenant:       one(tenants,               { fields: [orders.tenantId],       references: [tenants.id] }),
   branch:       one(branches,              { fields: [orders.branchId],        references: [branches.id] }),
   customer:     one(users,                 { fields: [orders.customerId],      references: [users.id] }),
+  staff:        one(users,                 { fields: [orders.staffId],         references: [users.id] }),
   subscription: one(customerSubscriptions, { fields: [orders.subscriptionId],  references: [customerSubscriptions.id] }),
   items:        many(orderItems),
 }));

@@ -163,5 +163,56 @@ export const analyticsController = new Elysia({ prefix: '/v1/analytics' })
       branchId: t.String(),
       days: t.Optional(t.String()),
     })
-  });
+  })
 
+  /**
+   * GET /v1/analytics/staff-performance
+   */
+  .get('/staff-performance', async ({ user, query, set }) => {
+    if (!user?.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!uuidRegex.test(query.branchId)) {
+      return { success: true, data: [] };
+    }
+
+    const data = await analyticsService.getStaffPerformance(
+      user.tenantId,
+      query.branchId,
+      query.days ? parseInt(query.days, 10) : 30
+    );
+    return { success: true, data };
+  }, {
+    query: t.Object({
+      branchId: t.String(),
+      days: t.Optional(t.String()),
+    })
+  })
+
+  /**
+   * GET /v1/analytics/inventory-forecast
+   */
+  .get('/inventory-forecast', async ({ user, query, set }) => {
+    if (!user?.tenantId) {
+      set.status = 403;
+      return { success: false, error: 'Tenant context required' };
+    }
+
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!uuidRegex.test(query.branchId)) {
+      return { success: true, data: [] };
+    }
+
+    const data = await analyticsService.getInventoryForecast(
+      user.tenantId,
+      query.branchId
+    );
+    return { success: true, data };
+  }, {
+    query: t.Object({
+      branchId: t.String()
+    })
+  });

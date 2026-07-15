@@ -161,4 +161,88 @@ export class AnalyticsService {
       { id: 'suggested2', name: 'Taco Meal Combo', items: ['Veg Quesadilla', 'Peri Peri Fries', 'Lemonade'], recommendedPrice: 199, confidence: '88%', lift: '+12% sales' }
     ];
   }
+  /**
+   * Retrieves staff performance metrics: total orders processed and revenue generated.
+   */
+  async getStaffPerformance(tenantId: string, branchId: string, days: number = 30) {
+    const result = await db.execute(sql`
+      SELECT 
+        u.id,
+        u.name,
+        u.role,
+        COUNT(o.id) as orders_processed,
+        COALESCE(SUM(o.total), 0) as revenue_generated
+      FROM users u
+      JOIN orders o ON o.staff_id = u.id
+      WHERE 
+        o.tenant_id = ${tenantId}
+        AND o.branch_id = ${branchId}
+        AND o.status = 'delivered'
+        AND o.created_at >= NOW() - (${days} || ' days')::interval
+      GROUP BY u.id
+      ORDER BY revenue_generated DESC
+    `);
+
+    const rows = (result as any).rows || result;
+    return rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      role: row.role,
+      ordersProcessed: parseInt(row.orders_processed || '0', 10),
+      revenueGenerated: parseFloat(row.revenue_generated || '0'),
+    }));
+  }
+
+  /**
+   * Generates an inventory forecast based on recent stock ledger changes.
+   */
+  async getInventoryForecast(tenantId: string, branchId: string) {
+    const result = await db.execute(sql`
+      WITH CurrentStock AS (
+        SELECT 
+          raw_material_id, 
+          SUM(quantity_change) as stock_level
+        FROM stock_ledgers
+        WHERE tenant_id = ${tenantId} AND branch_id = ${branchId}
+        GROUP BY raw_material_id
+      ),
+      DailyConsumption AS (
+        SELECT 
+          raw_material_id, 
+          ABS(SUM(quantity_change)) / 30 as avg_daily_usage
+        FROM stock_ledgers
+        WHERE 
+          tenant_id = ${tenantId} 
+          AND branch_id = ${branchId}
+          AND quantity_change < 0
+          AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY raw_material_id
+      )
+      SELECT 
+        rm.id,
+        rm.name,
+        rm.uom,
+        COALESCE(cs.stock_level, 0) as current_stock,
+        COALESCE(dc.avg_daily_usage, 0) as avg_daily_usage,
+        CASE 
+          WHEN COALESCE(dc.avg_daily_usage, 0) = 0 THEN 999
+          ELSE COALESCE(cs.stock_level, 0) / dc.avg_daily_usage 
+        END as days_remaining
+      FROM raw_materials rm
+      LEFT JOIN CurrentStock cs ON cs.raw_material_id = rm.id
+      LEFT JOIN DailyConsumption dc ON dc.raw_material_id = rm.id
+      WHERE rm.tenant_id = ${tenantId}
+      ORDER BY days_remaining ASC
+    `);
+
+    const rows = (result as any).rows || result;
+    return rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      uom: row.uom,
+      currentStock: parseFloat(row.current_stock || '0'),
+      avgDailyUsage: parseFloat(row.avg_daily_usage || '0'),
+      daysRemaining: parseFloat(row.days_remaining || '0'),
+    }));
+  }
 }
