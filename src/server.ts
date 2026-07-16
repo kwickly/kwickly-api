@@ -37,6 +37,7 @@ import { auditController } from './modules/audit/audit.controller.ts';
 import { leaveController } from './modules/staff/leave.controller.ts';
 import { adsController } from './modules/ads/ads.controller.ts';
 import { notificationsController } from './modules/notifications/notifications.controller.ts';
+import { pushNotificationsController } from './modules/notifications/push.controller.ts';
 import { usersController } from './modules/users/users.controller.ts';
 import { supportController } from './modules/support/support.controller.ts';
 import { platformSupportController } from './modules/support/platform-support.controller.ts';
@@ -131,6 +132,7 @@ export const app = new Elysia()
       .use(leaveController)
       .use(adsController)
       .use(notificationsController)
+      .use(pushNotificationsController)
       .use(supportController)
       .use(platformSupportController)
       .use(syncController)

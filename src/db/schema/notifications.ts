@@ -92,3 +92,38 @@ export type NewNotificationTemplate = typeof notificationTemplates.$inferInsert;
 
 export type NotificationLog = typeof notificationLogs.$inferSelect;
 export type NewNotificationLog = typeof notificationLogs.$inferInsert;
+
+/**
+ * FCM Device Tokens for Push Notifications
+ */
+export const fcmTokens = pgTable('fcm_tokens', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  deviceType: text('device_type'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  idxTenant: index('idx_fcmTokens_tenant_id').on(table.tenantId),
+  idxUser: index('idx_fcmTokens_user_id').on(table.userId),
+}));
+
+export const fcmTokensRelations = relations(fcmTokens, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [fcmTokens.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [fcmTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export type FcmToken = typeof fcmTokens.$inferSelect;
+export type NewFcmToken = typeof fcmTokens.$inferInsert;
