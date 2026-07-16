@@ -31,6 +31,7 @@ export const payrollRuns = pgTable('payroll_runs', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (table) => ({
+  idxTenant: index('idx_payrollRuns_tenant_id').on(table.tenantId),
   uniquePeriod: uniqueIndex('unique_payroll_period').on(table.tenantId, table.periodStartDate, table.periodEndDate),
 }));
 
@@ -58,6 +59,7 @@ export const salarySlips = pgTable('salary_slips', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (table) => ({
+  idxTenant: index('idx_salarySlips_tenant_id').on(table.tenantId),
   uniqueSlip: uniqueIndex('unique_salary_slip').on(table.payrollRunId, table.staffId),
 }));
 

@@ -30,6 +30,7 @@ export const branches = pgTable('branches', {
   updatedAt:    timestamp('updated_at').defaultNow().notNull(),
   deletedAt:    timestamp('deleted_at'),
 }, (table) => ({
+  idxTenant: index('idx_branches_tenant_id').on(table.tenantId),
   unqTenantBranch: uniqueIndex('unq_branch_tenant_name').on(table.tenantId, table.name),
 }));
 

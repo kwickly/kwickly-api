@@ -21,6 +21,7 @@ export const roles = pgTable('roles', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (table) => ({
+  idxTenant: index('idx_roles_tenant_id').on(table.tenantId),
   uniqueSlugTenant: uniqueIndex('unique_role_slug_tenant').on(table.slug, table.tenantId),
 }));
 
