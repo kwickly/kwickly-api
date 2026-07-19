@@ -47,13 +47,47 @@ export const menuItems = pgTable('menu_items', {
   description:    text('description'),
   price:          numeric('price', { precision: 10, scale: 2 }).notNull(),
   imageUrl:       text('image_url'),
+
+  // ── Dietary flags ────────────────────────────────────────────────────────
   isVeg:          boolean('is_veg').default(true).notNull(),
   isJain:         boolean('is_jain').default(false).notNull(),
   isGlutenFree:   boolean('is_gluten_free').default(false).notNull(),
   spiceLevel:     integer('spice_level').default(0), // 0=none, 1=mild, 2=medium, 3=hot
+
+  // ── Badge / tag flags (manual, set by restaurant admin) ──────────────────
+  // Priority for display: bestseller > chefSpecial > restaurantSpecial >
+  //                       new > popular > limitedEdition > healthyChoice
+  // Max 2 badges shown per item in the storefront.
+  // Future: isBestseller + isPopular will be auto-computed from order analytics.
+  isBestseller:        boolean('is_bestseller').default(false).notNull(),
+  isChefSpecial:       boolean('is_chef_special').default(false).notNull(),
+  isRestaurantSpecial: boolean('is_restaurant_special').default(false).notNull(),
+  isNew:               boolean('is_new').default(false).notNull(),
+  isPopular:           boolean('is_popular').default(false).notNull(),
+  isLimitedEdition:    boolean('is_limited_edition').default(false).notNull(),
+  isHealthyChoice:     boolean('is_healthy_choice').default(false).notNull(),
+
+  // ── Nutrition info (optional; all nullable) ───────────────────────────────
+  // FSSAI recommends calorie disclosure for restaurant menus.
+  // If calories is null, the storefront hides the nutrition row entirely.
+  calories:     integer('calories'),                           // kcal per serving
+  servingSize:  text('serving_size'),                          // e.g. "1 plate (350g)"
+  ingredients:  text('ingredients').array(),                   // ['chickpeas', 'tomato', ...]
+  allergens:    text('allergens').array(),                     // ['dairy', 'gluten', 'nuts', ...]
+  protein:      numeric('protein',  { precision: 5, scale: 1 }), // grams per serving
+  carbs:        numeric('carbs',    { precision: 5, scale: 1 }), // grams per serving
+  fat:          numeric('fat',      { precision: 5, scale: 1 }), // grams per serving
+
+  // ── Availability ──────────────────────────────────────────────────────────
   availability:   menuItemAvailabilityEnum('availability').default('always').notNull(),
-  availableFrom:  time('available_from'),  // e.g. 11:00
-  availableUntil: time('available_until'), // e.g. 15:00
+  availableFrom:  time('available_from'),   // e.g. "11:00" — used with time_window
+  availableUntil: time('available_until'),  // e.g. "15:00" — used with time_window
+  // Array of lowercase day names: ['monday','tuesday',...] — null means all days
+  availableDays:  text('available_days').array(),
+  // Hard expiry date for seasonal/limited-edition items.
+  // Storefront shows item as unavailable after this date.
+  availableUntilDate: text('available_until_date'), // ISO date string YYYY-MM-DD
+
   sortOrder:      integer('sort_order').default(0).notNull(),
   status: menuItemStatusEnum('status').default('AVAILABLE').notNull(),
   createdAt:      timestamp('created_at').defaultNow().notNull(),
@@ -62,6 +96,7 @@ export const menuItems = pgTable('menu_items', {
 }, (table) => ({
   unqTenantCategoryItem: uniqueIndex('unq_item_tenant_cat_name').on(table.tenantId, table.categoryId, table.name),
 }));
+
 
 // ─── Menu Item Variants ───────────────────────────────────────────────────────
 // e.g. Full / Half, Small / Medium / Large

@@ -24,3 +24,4 @@ export * from './notifications.ts';
 export * from './support.ts';
 export * from './timesheets.ts';
 export * from './devices.ts';
+export * from './billing.ts';

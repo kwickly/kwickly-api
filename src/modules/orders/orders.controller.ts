@@ -2,8 +2,10 @@ import { Elysia, t } from 'elysia';
 import { OrdersService } from './orders.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { sanitizeLimit, buildCursorMeta } from '../../shared/pagination.ts';
+import { BillingService } from '../billing/billing.service.ts';
 
 const ordersService = new OrdersService();
+const billingService = new BillingService();
 import { db } from '../../db';
 import { tenants } from '../../db/schema/tenants';
 import { eq } from 'drizzle-orm';
@@ -29,6 +31,13 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
       customerId: undefined,
     });
 
+    // Increment monthly billing order count
+    try {
+      await billingService.incrementOrderCount(tenant.id);
+    } catch (err) {
+      console.error('Failed to increment order billing meter:', err);
+    }
+
     return {
       success: true,
       message: 'Order placed successfully',
@@ -46,6 +55,28 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
         })
       ),
     })
+  })
+
+  /**
+   * GET /v1/orders/limit-status/:slug
+   * Fetch current monthly order limit and checks if tenant exceeded limits.
+   */
+  .get('/limit-status/:slug', async ({ params: { slug } }) => {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+    if (!tenant) {
+      return { success: false, error: 'Restaurant not found' };
+    }
+
+    const meter = await billingService.getOrCreateActiveMeter(tenant.id);
+    const maxOrders = tenant.maxOrdersPerMonth;
+    const isExceeded = tenant.plan === 'BASIC' && meter.orderCount >= maxOrders;
+
+    return {
+      success: true,
+      orderCount: meter.orderCount,
+      maxOrders,
+      limitExceeded: isExceeded,
+    };
   })
 
   // --- Auth Required Below Here ---

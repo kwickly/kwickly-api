@@ -6,6 +6,8 @@ import {
   timestamp,
   pgEnum,
   jsonb,
+  integer,
+  numeric,
   index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { branches } from './branches.ts';
@@ -14,9 +16,11 @@ import { users } from './users.ts';
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const tenantPlanEnum = pgEnum('tenant_plan', [
   'FREE',
+  'BASIC',
   'STARTER',
   'GROWTH',
   'ENTERPRISE',
+  'CUSTOM',
 ]);
 
 export const tenantStatusEnum = pgEnum('tenant_status', [
@@ -34,8 +38,18 @@ export const tenants = pgTable('tenants', {
   email:       text('email'),
   address:     text('address'),
   baseCurrency: text('base_currency').default('INR').notNull(),
-  plan:        tenantPlanEnum('plan').default('FREE').notNull(),
+  plan:        tenantPlanEnum('plan').default('BASIC').notNull(),
   status:      tenantStatusEnum('status').default('ACTIVE').notNull(),
+  billingModel: text('billing_model').default('FLAT').notNull(), // 'FLAT' | 'METERED'
+  baseFee:      numeric('base_fee', { precision: 10, scale: 2 }).default('499.00').notNull(),
+  customOrderRate: numeric('custom_order_rate', { precision: 10, scale: 2 }),
+  maxOrdersPerMonth: integer('max_orders_per_month').default(100).notNull(),
+  enabledAddons: jsonb('enabled_addons').$type<{
+    inventory: boolean;
+    payroll: boolean;
+    crm: boolean;
+    ai: boolean;
+  }>().default({ inventory: false, payroll: false, crm: false, ai: false }).notNull(),
   annualPaidLeaveLimit: text('annual_paid_leave_limit').default('15').notNull(),
   createdAt:   timestamp('created_at').defaultNow().notNull(),
   updatedAt:   timestamp('updated_at').defaultNow().notNull(),
@@ -64,6 +78,12 @@ export const tenantBrandings = pgTable('tenant_brandings', {
   customEmailSender: text('custom_email_sender'),
   hideKwicklyBranding: boolean('hide_kwickly_branding').default(false).notNull(),
   customPwaManifest: jsonb('custom_pwa_manifest'),
+  enabledModules: jsonb('enabled_modules').$type<{
+    dineIn: boolean;
+    takeaway: boolean;
+    delivery: boolean;
+    subscriptions: boolean;
+  }>().default({ dineIn: true, takeaway: false, delivery: false, subscriptions: false }).notNull(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

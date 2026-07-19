@@ -18,6 +18,8 @@ Decisions regarding the PostgreSQL database, Drizzle ORM, state management, and 
 - [2026-07-12: Database Schema Standards](database-and-schema/2026-07-12-database-schema-standards/database-standards.md)
 - [2026-07-12: Global Status Enums](database-and-schema/2026-07-12-global-status-enums/global-status-enums.md)
 - [2026-07-16: Automated Schema Compliance](database-and-schema/2026-07-16-automated-schema-compliance/automated-schema-compliance.md)
+- [2026-07-19: Metered Billing & Custom Tiers Database Schema](database-and-schema/2026-07-19-metered-billing-and-custom-tiers/billing-schema.md)
+- [2026-07-19: Menu Item Enrichment — Tags, Nutrition & Availability](database-and-schema/2026-07-19-menu-item-enrichment/menu-item-enrichment.md)
 
 ### 🧪 Testing & QA
 - [2026-06-17: Initial Testing](testing-and-qa/2026-06-17-initial-testing/testing-progress.md)

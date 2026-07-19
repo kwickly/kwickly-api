@@ -30,11 +30,15 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
         id: tenants.id,
         name: tenants.name,
         slug: tenants.slug,
+        plan: tenants.plan,
+        baseCurrency: tenants.baseCurrency,
+        enabledAddons: tenants.enabledAddons,
         brandColor: tenantBrandings.brandColor,
         logoUrl: tenantBrandings.logoUrl,
         logoDarkUrl: tenantBrandings.logoDarkUrl,
         hideKwicklyBranding: tenantBrandings.hideKwicklyBranding,
-        themeMode: tenantBrandings.themeMode
+        themeMode: tenantBrandings.themeMode,
+        enabledModules: tenantBrandings.enabledModules
       })
       .from(tenants)
       .leftJoin(tenantBrandings, eq(tenants.id, tenantBrandings.tenantId))

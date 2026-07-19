@@ -15,6 +15,20 @@
       "when": 1784153230633,
       "tag": "0001_long_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784408918432,
+      "tag": "0002_wakeful_spirit",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784415999137,
+      "tag": "0003_menu_item_enrichment_tags_nutrition_availability",
+      "breakpoints": true
     }
   ]
 }
