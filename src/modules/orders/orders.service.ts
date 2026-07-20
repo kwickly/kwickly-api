@@ -82,11 +82,13 @@ export class OrdersService {
     // 3. Resolve Table & Session
     let tableId: string | undefined;
     let sessionId: string | undefined;
+    let table: any | undefined;
     
     if (payload.qrToken) {
-      const [table] = await db.select().from(restaurantTables)
+      const [foundTable] = await db.select().from(restaurantTables)
         .where(eq(restaurantTables.qrToken, payload.qrToken));
-      if (!table) throw new Error('Invalid QR Token');
+      if (!foundTable) throw new Error('Invalid QR Token');
+      table = foundTable;
       tableId = table.id;
       
       // If table already has an active session, we should actually append to it.
@@ -515,7 +517,7 @@ export class OrdersService {
         o.created_at as "createdAt",
         (SELECT status FROM kots k WHERE k.order_id = o.id ORDER BY created_at DESC LIMIT 1) as "kotStatus",
         t.default_preparation_time as "defaultPreparationTime",
-        (o.created_at + (t.default_preparation_time * interval '1 minute')) as "estimatedCompletionTime",
+        (COALESCE((SELECT MAX(created_at) FROM kots k WHERE k.order_id = o.id), o.created_at) + (t.default_preparation_time * interval '1 minute')) as "estimatedCompletionTime",
         (SELECT json_agg(
           json_build_object(
             'id', oi.id,

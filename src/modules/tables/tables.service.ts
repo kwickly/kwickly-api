@@ -49,10 +49,12 @@ export class TablesService {
       });
       if (!tenant) throw new Error('Tenant not found');
 
-      const [{ count }] = await tx.select({ count: sql<number>`cast(count(${restaurantTables.id}) as int)` })
+      const result = await tx.select({ count: sql<number>`cast(count(${restaurantTables.id}) as int)` })
         .from(restaurantTables)
         .where(and(eq(restaurantTables.branchId, branchId), isNull(restaurantTables.deletedAt)));
 
+      const count = result[0]?.count || 0;
+      
       if (count >= tenant.maxTables) {
         throw new Error(`Your plan supports a maximum of ${tenant.maxTables} tables. Please upgrade to add more.`);
       }
@@ -110,7 +112,7 @@ export class TablesService {
       if (session.status === 'closed') throw new Error('Session is already closed');
 
       await tx.update(tableSessions)
-        .set({ status: 'closed', closedAt: new Date() })
+        .set({ status: 'closed', endedAt: new Date() })
         .where(eq(tableSessions.id, sessionId));
 
       await tx.update(restaurantTables)
