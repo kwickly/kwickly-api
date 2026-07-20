@@ -38,6 +38,7 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
         logoDarkUrl: tenantBrandings.logoDarkUrl,
         hideKwicklyBranding: tenantBrandings.hideKwicklyBranding,
         themeMode: tenantBrandings.themeMode,
+        themeConfig: tenantBrandings.themeConfig,
         enabledModules: tenantBrandings.enabledModules,
         allowTakeawayOnDineIn: tenants.allowTakeawayOnDineIn
       })

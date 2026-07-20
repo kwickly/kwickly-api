@@ -80,43 +80,28 @@
 
 ## In-Progress / Upcoming Phases
 
-### 🔴 Phase 9 — Table Management & QR Codes
-
-**Goal:** Full restaurant floor management with plan-gated table limits, QR-based table identification, and consolidated dine-in billing.
-
-**Repos affected:** kwickly-api · kwickly-admin-web · kwickly-client
-
-#### Sub-tasks:
-
-**kwickly-api**
-- [ ] New schema: `restaurant_tables` (id, branchId, name, capacity, status, qrToken, sortOrder)
-- [ ] New schema: `table_sessions` (id, tableId, orderId, kotRound, status, openedAt, closedAt)
-- [ ] Modify `kots`: add `kotRound`, `tableSessionId`
-- [ ] Modify `orders`: add `tableId`, `sessionId`
-- [ ] Modify `orderItems`: add `fulfillmentMode` (dine_in, takeaway)
-- [ ] Modify `tenants`: add `maxTables` (plan-gated) and `allowTakeawayOnDineIn` (boolean)
-- [ ] Run drizzle migration
-- [ ] New module: `src/modules/tables/` (CRUD + regenerate-qr + close-session endpoints)
-- [ ] Modify `placeOrder()`: resolve qrToken → session check → append or new order
-- [ ] New method: `addItemsToOrder(sessionId, items[])` — append-only, new KOT round
-
-**kwickly-admin-web**
-- [ ] New page: `src/pages/tables/FloorView.tsx` (visual grid, live status, close-session)
-- [ ] New page: `src/pages/tables/QRManager.tsx` (bulk download, print sheet, regenerate)
-- [ ] Register routes in `App.tsx`
-- [ ] Add "Tables & Floor" nav group to `AppSidebar.tsx`
-- [ ] Modify `Kds.tsx`: show KOT round badge, table name from registry
-- [ ] Show table count vs plan limit in `OperationalSettings.tsx`
-
-**kwickly-client**
-- [ ] Read `?t={qrToken}` from URL in `MenuClientView.tsx`
-- [ ] Resolve token → table name via API
-- [ ] Show "Dine-In · Table X" sticky banner
-- [ ] Modify `checkout/page.tsx`: check active session → add-items vs new-order flow
-- [ ] Fix hardcoded `tableNumber: 'Table 12'` bug in checkout
-- [ ] Modify `orders/[orderId]/page.tsx`: group items by KOT round
+### ✅ Phase 9 — Table Management & QR Codes
+- Implemented plan-gated table limits and floor management
+- Created QR-based table identification and session lock
+- Implemented mixed fulfillment mode (allow takeaway on dine-in)
+- Integrated KDS round indicators and To-Go badges
 
 ---
+
+## In-Progress / Upcoming Phases
+
+### 🟡 Phase 9.5 — Client Storefront UI/UX Revamp & Dynamic Branding
+
+**Goal:** Transform the storefront into a "classic, professional, trendy, and cute" consumer app using the Floating Bento aesthetic and dynamic tenant-defined branding.
+
+**Repos affected:** kwickly-api · kwickly-client
+
+#### Sub-tasks:
+- [ ] Expose `themeConfig` in the `GET /v1/auth/branding` public endpoint
+- [ ] Update client layout to dynamically inject CSS variables for font based on `themeConfig`
+- [ ] Set `Poppins` as the fallback default font across the storefront
+- [ ] Remove hardcoded borders and `font-black` weights in favor of soft shadows and rounded bento corners
+- [ ] Redesign `orders/[orderId]/page.tsx` Track Order page to reflect the new UI guidelines
 
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API
