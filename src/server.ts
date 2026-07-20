@@ -42,6 +42,7 @@ import { usersController } from './modules/users/users.controller.ts';
 import { supportController } from './modules/support/support.controller.ts';
 import { platformSupportController } from './modules/support/platform-support.controller.ts';
 import { syncController } from './modules/sync/sync.controller.ts';
+import { tablesController } from './modules/tables/tables.controller.ts';
 
 export const app = new Elysia()
   .use(cors())
@@ -136,6 +137,7 @@ export const app = new Elysia()
       .use(supportController)
       .use(platformSupportController)
       .use(syncController)
+      .use(tablesController)
   )
   
   .use(websocketPlugin);

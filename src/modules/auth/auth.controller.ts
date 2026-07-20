@@ -38,7 +38,8 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
         logoDarkUrl: tenantBrandings.logoDarkUrl,
         hideKwicklyBranding: tenantBrandings.hideKwicklyBranding,
         themeMode: tenantBrandings.themeMode,
-        enabledModules: tenantBrandings.enabledModules
+        enabledModules: tenantBrandings.enabledModules,
+        allowTakeawayOnDineIn: tenants.allowTakeawayOnDineIn
       })
       .from(tenants)
       .leftJoin(tenantBrandings, eq(tenants.id, tenantBrandings.tenantId))

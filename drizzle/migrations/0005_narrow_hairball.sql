@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "default_preparation_time" integer DEFAULT 20 NOT NULL;

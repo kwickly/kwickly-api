@@ -101,6 +101,7 @@ async function main() {
       .where(eq(schema.menuItems.categoryId, cat.id));
     for (const item of items) {
       await db.delete(schema.menuItemVariants).where(eq(schema.menuItemVariants.menuItemId, item.id));
+      await db.delete(schema.menuItemAddons).where(eq(schema.menuItemAddons.menuItemId, item.id));
       await db.delete(schema.menuItems).where(eq(schema.menuItems.id, item.id));
     }
     await db.delete(schema.menuCategories).where(eq(schema.menuCategories.id, cat.id));
@@ -433,9 +434,15 @@ async function main() {
   console.log('🎉 Punjabi Chaska successfully onboarded & seeded!');
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+export async function seedPunjabiChaska() {
+  await main();
+}
+
+if (import.meta.main) {
+  main()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

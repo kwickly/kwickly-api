@@ -1,0 +1,4 @@
+FIREBASE_SERVICE_ACCOUNT_KEY not found. Push notifications will not work.
+[2026-07-19 17:39:22.449 +0530] [32mINFO[39m: [36mVerifying database connection...[39m
+[2026-07-19 17:39:24.961 +0530] [32mINFO[39m: [36mDatabase connection verified successfully.[39m
+[2026-07-19 17:39:24.982 +0530] [32mINFO[39m: [36m🦊 Kwickly API is running at localhost:8081[39m

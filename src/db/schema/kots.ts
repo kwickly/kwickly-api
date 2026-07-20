@@ -1,6 +1,6 @@
 import {
   uuid,
-  pgTable, text, timestamp, pgEnum, index } from 'drizzle-orm/pg-core';
+  pgTable, text, integer, timestamp, pgEnum, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { orders } from './orders';
 import { branches } from './branches';
@@ -17,8 +17,10 @@ export const kotStatusEnum = pgEnum('kot_status', [
 // One KOT per order — pushed to KDS via SSE when an order is accepted
 export const kots = pgTable('kots', {
   id: uuid('id').defaultRandom().primaryKey(),
-  orderId:     uuid('order_id').notNull().references(() => orders.id),
-  branchId:    uuid('branch_id').notNull().references(() => branches.id),
+  orderId:          uuid('order_id').notNull().references(() => orders.id),
+  branchId:         uuid('branch_id').notNull().references(() => branches.id),
+  tableSessionId:   uuid('table_session_id'),   // FK → table_sessions.id (nullable for tableless orders)
+  kotRound:         integer('kot_round').default(1).notNull(), // which round: 1=first order, 2=added items, etc.
   status:      kotStatusEnum('status').default('pending').notNull(),
   printedAt:   timestamp('printed_at'),   // null until staff prints the KOT slip
   completedAt: timestamp('completed_at'),

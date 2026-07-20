@@ -1,7 +1,7 @@
 import { db } from './index.ts';
 import * as schema from './schema/index.ts';
 import { faker } from '@faker-js/faker';
-
+import { seedPunjabiChaska } from './seed-punjabi-chaska.ts';
 async function main() {
   console.log('🌱 Starting comprehensive database seeding with Faker.js...');
 
@@ -613,7 +613,9 @@ async function main() {
     }
   }
 
-  console.log('✅ Seeding completed successfully!');
+  console.log('✅ Base seeding completed successfully!');
+  await seedPunjabiChaska();
+  console.log('🎉 All seed scripts completed!');
   process.exit(0);
 }
 

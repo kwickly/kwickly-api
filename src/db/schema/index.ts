@@ -25,3 +25,5 @@ export * from './support.ts';
 export * from './timesheets.ts';
 export * from './devices.ts';
 export * from './billing.ts';
+export * from './restaurant_tables.ts';
+export * from './table_sessions.ts';

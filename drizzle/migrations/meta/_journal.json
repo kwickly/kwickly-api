@@ -29,6 +29,34 @@
       "when": 1784415999137,
       "tag": "0003_menu_item_enrichment_tags_nutrition_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784461539026,
+      "tag": "0004_steep_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784470566794,
+      "tag": "0005_narrow_hairball",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784473532268,
+      "tag": "0006_flowery_doomsday",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784572239998,
+      "tag": "0007_condemned_dark_beast",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,7 @@ import { users } from './users';
 import { menuItems, menuItemVariants, menuItemAddons } from './menus';
 import { combos } from './combos';
 import { customerSubscriptions } from './subscriptions';
+import { restaurantTables } from './restaurant_tables';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 export const orderTypeEnum = pgEnum('order_type', [
@@ -23,6 +24,8 @@ export const orderTypeEnum = pgEnum('order_type', [
   'combo',                    // standalone combo purchase
 ]);
 
+import { paymentStatusEnum, paymentMethodEnum } from './payments';
+
 export const orderStatusEnum = pgEnum('order_status', [
   'pending',
   'accepted',
@@ -30,6 +33,12 @@ export const orderStatusEnum = pgEnum('order_status', [
   'ready',
   'delivered',
   'cancelled',
+]);
+
+export const orderModeEnum = pgEnum('order_mode', [
+  'dine_in',
+  'takeaway',
+  'delivery',
 ]);
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
@@ -41,12 +50,17 @@ export const orders = pgTable('orders', {
   staffId:        uuid('staff_id').references(() => users.id),             // Staff who processed the order
   subscriptionId: uuid('subscription_id').references(() => customerSubscriptions.id), // for subscription_redemption
   type:           orderTypeEnum('type').notNull(),
+  mode:           orderModeEnum('mode').default('dine_in').notNull(),
   status:         orderStatusEnum('status').default('pending').notNull(),
+  paymentStatus:  paymentStatusEnum('payment_status').default('pending').notNull(),
+  paymentMethod:  paymentMethodEnum('payment_method'),
   subtotal:       numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
   discountAmount: numeric('discount_amount', { precision: 10, scale: 2 }).default('0').notNull(),
   total:          numeric('total', { precision: 10, scale: 2 }).notNull(),
   note:           text('note'),
-  tableNumber:    text('table_number'),
+  tableNumber:    text('table_number'),       // free-text for POS / tableless orders
+  tableId:        uuid('table_id').references(() => restaurantTables.id),  // FK to registered table (nullable)
+  sessionId:      uuid('session_id'),                                       // FK to table_sessions set after insert
   createdAt:      timestamp('created_at').defaultNow().notNull(),
   updatedAt:      timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -63,6 +77,7 @@ export const orderItems = pgTable('order_items', {
   variantId:   uuid('variant_id').references(() => menuItemVariants.id),
   addonId:     uuid('addon_id').references(() => menuItemAddons.id),
   name:        text('name').notNull(),    // snapshot name at order time
+  fulfillmentMode: orderModeEnum('fulfillment_mode'),
   quantity:    integer('quantity').default(1).notNull(),
   unitPrice:   numeric('unit_price', { precision: 10, scale: 2 }).notNull(),
   total:       numeric('total', { precision: 10, scale: 2 }).notNull(),

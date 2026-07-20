@@ -44,6 +44,9 @@ export const tenants = pgTable('tenants', {
   baseFee:      numeric('base_fee', { precision: 10, scale: 2 }).default('499.00').notNull(),
   customOrderRate: numeric('custom_order_rate', { precision: 10, scale: 2 }),
   maxOrdersPerMonth: integer('max_orders_per_month').default(100).notNull(),
+  maxTables: integer('max_tables').default(10).notNull(), // plan-gated: FREE=0, BASIC=10, STARTER=25, GROWTH=75, ENTERPRISE=9999
+  allowTakeawayOnDineIn: boolean('allow_takeaway_on_dine_in').default(false).notNull(),
+  defaultPreparationTime: integer('default_preparation_time').default(20).notNull(), // minutes
   enabledAddons: jsonb('enabled_addons').$type<{
     inventory: boolean;
     payroll: boolean;
