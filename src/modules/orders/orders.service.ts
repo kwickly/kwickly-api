@@ -114,7 +114,7 @@ export class OrdersService {
         subtotal: subtotal.toString(),
         discountAmount: discountAmount.toString(),
         total: total.toString(),
-        tableNumber: payload.tableNumber,
+        tableNumber: table ? table.name : payload.tableNumber,
         tableId, // FK
         note: payload.note,
       })
@@ -513,10 +513,10 @@ export class OrdersService {
         o.subtotal,
         o.total,
         o.created_at as "createdAt",
-        k.status as "kotStatus",
+        (SELECT status FROM kots k WHERE k.order_id = o.id ORDER BY created_at DESC LIMIT 1) as "kotStatus",
         t.default_preparation_time as "defaultPreparationTime",
         (o.created_at + (t.default_preparation_time * interval '1 minute')) as "estimatedCompletionTime",
-        json_agg(
+        (SELECT json_agg(
           json_build_object(
             'id', oi.id,
             'name', oi.name,
@@ -525,13 +525,10 @@ export class OrdersService {
             'total', oi.total,
             'fulfillmentMode', oi.fulfillment_mode
           )
-        ) as items
+        ) FROM order_items oi WHERE oi.order_id = o.id) as items
       FROM orders o
-      LEFT JOIN kots k ON k.order_id = o.id
-      LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN tenants t ON t.id = o.tenant_id
       WHERE o.id = ${orderId}
-      GROUP BY o.id, k.status, t.default_preparation_time
       LIMIT 1
     `);
 
