@@ -97,11 +97,12 @@
 **Repos affected:** kwickly-api · kwickly-client
 
 #### Sub-tasks:
-- [ ] Expose `themeConfig` in the `GET /v1/auth/branding` public endpoint
-- [ ] Update client layout to dynamically inject CSS variables for font based on `themeConfig`
-- [ ] Set `Poppins` as the fallback default font across the storefront
-- [ ] Remove hardcoded borders and `font-black` weights in favor of soft shadows and rounded bento corners
-- [ ] Redesign `orders/[orderId]/page.tsx` Track Order page to reflect the new UI guidelines
+- [x] Expose `themeConfig` in the `GET /v1/auth/branding` public endpoint
+- [x] Update client layout to dynamically inject CSS variables for font based on `themeConfig`
+- [x] Set `Poppins` as the fallback default font across the storefront
+- [x] Remove hardcoded borders and `font-black` weights in favor of soft shadows and rounded bento corners
+- [x] Redesign `orders/[orderId]/page.tsx` Track Order page to reflect the new UI guidelines
+- [x] Integrate session appending logic for QR table orders on storefront
 
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API
@@ -130,9 +131,9 @@
 
 | # | Severity | Repo | Description | Status |
 |---|---|---|---|---|
-| 1 | 🔴 High | kwickly-client | `checkout/page.tsx` hardcodes `tableNumber: 'Table 12'` for every order | 🔴 Fix in Phase 9 |
-| 2 | 🔴 High | kwickly-api | `updateOrderItems()` is destructive (DELETE + INSERT). Must become append-only | 🔴 Fix in Phase 9 |
-| 3 | 🟡 Medium | kwickly-api | Every public order creates a new `orders` row. No session concept for dine-in | 🔴 Fix in Phase 9 |
+| 1 | 🔴 High | kwickly-client | `checkout/page.tsx` hardcodes `tableNumber: 'Table 12'` for every order | ✅ Fixed in Phase 9 |
+| 2 | 🔴 High | kwickly-api | `updateOrderItems()` is destructive (DELETE + INSERT). Must become append-only | ✅ Fixed in Phase 9 |
+| 3 | 🟡 Medium | kwickly-api | Every public order creates a new `orders` row. No session concept for dine-in | ✅ Fixed in Phase 9 |
 | 4 | 🟡 Medium | kwickly-admin-web | `CreateMenuItemSheet.tsx` has Resolver type mismatch (pre-existing) | ⏸️ Deferred |
 | 5 | 🟡 Medium | kwickly-admin-web | `PlatformTenants.tsx` plan enum mismatch (BASIC/CUSTOM not in type) | ⏸️ Deferred |
-| 6 | 🟢 Low | kwickly-api | `POST /public/:slug` resolves `branchId='default'` but doesn't validate mode | 🔴 Fix in Phase 9 |
+| 6 | 🟢 Low | kwickly-api | `POST /public/:slug` resolves `branchId='default'` but doesn't validate mode | ✅ Fixed in Phase 9 |

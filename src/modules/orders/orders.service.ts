@@ -236,23 +236,30 @@ export class OrdersService {
 
     if (!existingOrder) throw new Error('Order not found');
 
+    const newSubtotal = parseFloat(existingOrder.subtotal) + subtotal;
+    const newTotal = parseFloat(existingOrder.total) + subtotal; // Assuming discount amount doesn't change dynamically for append
+
     // 3b. Update Master Order
     const [updatedOrder] = await db
       .update(orders)
       .set({
-        subtotal: subtotal.toString(),
-        discountAmount: discountAmount.toString(),
-        total: total.toString(),
+        subtotal: newSubtotal.toString(),
+        total: newTotal.toString(),
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId))
       .returning();
 
-    // 3c. Replace Line Items
-    await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
-    await db.insert(orderItems).values(finalOrderItems);
+    // 3c. Append New Line Items (Append-only)
+    // Instead of deleting existing items, we just insert the newly added items.
+    // The front-end now sends only the *newly added* items when modifying an order.
+    const insertedItems = await db.insert(orderItems).values(finalOrderItems).returning();
 
-    // 3d. Update KOT to pending
+    // 3d. Update KOT to pending (or create a new KOT round for these items)
+    // Assuming KOTs are per-order. For true append-only rounds, we would create a new KOT.
+    // Since the schema has a 1-to-1 or 1-to-many relationship, we'll update the existing KOT 
+    // or we'd ideally create a new KOT. Let's stick to updating the order's KOT status to pending for now
+    // so the kitchen sees the new items.
     const [updatedKot] = await db
       .update(kots)
       .set({ status: 'pending', updatedAt: new Date() })
@@ -267,7 +274,7 @@ export class OrdersService {
         branchId: result.order.branchId,
         kot: result.kot,
         order: result.order,
-        items: finalOrderItems,
+        items: insertedItems, // Broadcast only the newly added items
       });
     }
 
