@@ -104,6 +104,12 @@
 - [x] Redesign `orders/[orderId]/page.tsx` Track Order page to reflect the new UI guidelines
 - [x] Integrate session appending logic for QR table orders on storefront
 
+### ✅ Phase 9.6 — Admin Orders & KDS Redesign
+- Separated Kitchen Display System (Kanban) and Order Management (Data Table) views
+- Built `/kds` with transparent ticket cards and SSE status sync
+- Built `/orders` as a robust Table with inline action icon buttons
+- Implemented `POST /v1/orders/admin/:id/cancel` and tied it to the frontend with automatic query invalidation
+
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API
 - Webhook handler on kwickly-api for `payment.captured`

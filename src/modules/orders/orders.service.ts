@@ -132,6 +132,7 @@ export class OrdersService {
         orderId: newOrder.id,
         status: 'open',
       }).returning();
+      if (!newSession) throw new Error('Session creation failed');
       sessionId = newSession.id;
 
       // Update table with current session
@@ -460,7 +461,7 @@ export class OrdersService {
       JOIN order_items oi ON o.id = oi.order_id
       WHERE 
         k.branch_id = ${branchId}
-        AND k.status IN ('pending', 'preparing')
+        AND k.status IN ('pending', 'preparing', 'ready')
       GROUP BY k.id, o.id
       ORDER BY k.created_at ASC
     `);
@@ -517,6 +518,7 @@ export class OrdersService {
       SELECT 
         o.id,
         o.status as "orderStatus",
+        o.payment_status as "paymentStatus",
         o.mode,
         o.table_number as "tableNumber",
         o.subtotal,
@@ -547,5 +549,34 @@ export class OrdersService {
     }
 
     return rows[0];
+  }
+
+  /**
+   * Cancel an order by Admin/Tenant
+   */
+  async cancelOrder(orderId: string) {
+    const [updatedOrder] = await db.update(orders)
+      .set({ status: 'cancelled' })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    if (!updatedOrder) {
+      throw new Error('Order not found');
+    }
+
+    // Cancel all associated KOTs that aren't completed
+    await db.update(kots)
+      .set({ status: 'completed', updatedAt: new Date() }) // KDS treats cancelled as completed/cleared
+      .where(
+        and(
+          eq(kots.orderId, orderId),
+          inArray(kots.status, ['pending', 'preparing', 'ready'])
+        )
+      );
+
+    // Emit event so SSE clients (like the tracking page) get the update
+    eventBus.emit(EVENTS.KOT_UPDATED, { orderId: updatedOrder.id }); // Using KOT_UPDATED to trigger the status_update SSE
+
+    return updatedOrder;
   }
 }

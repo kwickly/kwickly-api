@@ -62,7 +62,7 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
       message: 'Order placed successfully',
       data: {
         ...result,
-        sessionId: result.order.sessionId // Pass sessionId to client for adding items later
+        sessionId: result?.order?.sessionId // Pass sessionId to client for adding items later
       },
     };
   }, {
@@ -224,10 +224,12 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
 
       // We listen to the global EVENT bus for KOT updates
       eventBus.on(EVENTS.KOT_UPDATED, onStatusUpdated);
+      eventBus.on(EVENTS.NEW_KOT, onStatusUpdated);
 
       // Clean up the listener when the connection drops
       request.signal.addEventListener('abort', () => {
         eventBus.off(EVENTS.KOT_UPDATED, onStatusUpdated);
+        eventBus.off(EVENTS.NEW_KOT, onStatusUpdated);
       });
     });
   })
@@ -432,5 +434,20 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
           t.Literal('wallet'),
         ])),
       }),
+    }
+  )
+
+  /**
+   * POST /v1/orders/admin/:id/cancel
+   * Cancel an order from the Admin panel
+   */
+  .post(
+    '/admin/:id/cancel',
+    async ({ params: { id } }) => {
+      const cancelled = await ordersService.cancelOrder(id);
+      return {
+        success: true,
+        data: cancelled,
+      };
     }
   );
