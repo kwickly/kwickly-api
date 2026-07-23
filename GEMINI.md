@@ -38,3 +38,6 @@ Failure to follow these rules will compromise the system's data integrity.
   - `bun run db:prod:migrate` (Applies migrations to production NeonDB)
   - `bun run db:seed` (Populates the database with initial seed data)
   - `bunx tsc --noEmit` (Strict type checking)
+
+## 3. Scratch Scripts
+Always place temporary or one-off testing scripts in the `agent-scripts/` directory (which is git-ignored) to prevent polluting the git history.
