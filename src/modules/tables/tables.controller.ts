@@ -1,20 +1,17 @@
 import { Elysia, t } from 'elysia';
 import { tablesService } from './tables.service';
+import { requireAuth } from '../auth/auth.guard.ts';
 
 export const tablesController = new Elysia({ prefix: '/v1/tables' })
-  .get('/', async ({ query }) => {
-    return await tablesService.getTables(query.branchId);
+  .use(requireAuth)
+  .get('/', async ({ query, user }) => {
+    return await tablesService.getTables(query.branchId, user.tenantId);
   }, {
     query: t.Object({ branchId: t.String() })
   })
 
-  .post('/', async ({ body, headers }) => {
-    // For now we assume tenantId is sent in headers or resolved via middleware.
-    // Given the Elysia setup here, we mock it or extract it.
-    // In a real setup, RBAC middleware attaches this to the context.
-    const tenantId = headers['x-tenant-id'] || ''; // placeholder for auth extraction
-    if (!tenantId) throw new Error('Unauthorized');
-    return await tablesService.createTable(tenantId, body.branchId, body);
+  .post('/', async ({ body, user }) => {
+    return await tablesService.createTable(user.tenantId, body.branchId, body);
   }, {
     body: t.Object({
       branchId: t.String(),
@@ -24,8 +21,8 @@ export const tablesController = new Elysia({ prefix: '/v1/tables' })
     })
   })
 
-  .patch('/:id', async ({ params, body }) => {
-    return await tablesService.updateTable(params.id, body.branchId, body);
+  .patch('/:id', async ({ params, body, user }) => {
+    return await tablesService.updateTable(params.id, body.branchId, user.tenantId, body);
   }, {
     body: t.Object({
       branchId: t.String(),
@@ -41,21 +38,21 @@ export const tablesController = new Elysia({ prefix: '/v1/tables' })
     })
   })
 
-  .delete('/:id', async ({ params, query }) => {
-    await tablesService.deleteTable(params.id, query.branchId);
+  .delete('/:id', async ({ params, query, user }) => {
+    await tablesService.deleteTable(params.id, query.branchId, user.tenantId);
     return { success: true };
   }, {
     query: t.Object({ branchId: t.String() })
   })
 
-  .post('/:id/regenerate-qr', async ({ params, body }) => {
-    return await tablesService.regenerateQrToken(params.id, body.branchId);
+  .post('/:id/regenerate-qr', async ({ params, body, user }) => {
+    return await tablesService.regenerateQrToken(params.id, body.branchId, user.tenantId);
   }, {
     body: t.Object({ branchId: t.String() })
   })
 
-  .post('/sessions/:id/close', async ({ params, body }) => {
-    return await tablesService.closeSession(params.id, body.branchId);
+  .post('/sessions/:id/close', async ({ params, body, user }) => {
+    return await tablesService.closeSession(params.id, body.branchId, user.tenantId);
   }, {
     body: t.Object({ branchId: t.String() })
   });
