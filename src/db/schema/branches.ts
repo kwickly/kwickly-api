@@ -23,6 +23,7 @@ export const branches = pgTable('branches', {
   latitude:     real('latitude'),
   longitude:    real('longitude'),
   openingHours: jsonb('opening_hours'), // { mon: { open: "09:00", close: "22:00" }, ... }
+  timezone:     text('timezone').default('Asia/Kolkata').notNull(),
   currency:     text('currency'), // Optional branch-level override
   status: branchStatusEnum('status').default('ACTIVE').notNull(),
   managerId:    uuid('manager_id'), // FK to users — set after users table exists

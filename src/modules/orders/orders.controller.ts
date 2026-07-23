@@ -2,12 +2,14 @@ import { Elysia, t } from 'elysia';
 import { OrdersService } from './orders.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { sanitizeLimit, buildCursorMeta } from '../../shared/pagination.ts';
+import { BranchesService } from '../branches/branches.service.ts';
 import { BillingService } from '../billing/billing.service.ts';
 import { Stream } from '@elysiajs/stream';
 import { eventBus, EVENTS } from '../../shared/events.ts';
 
 const ordersService = new OrdersService();
 const billingService = new BillingService();
+const branchesService = new BranchesService();
 import { db } from '../../db';
 import { tenants } from '../../db/schema/tenants';
 import { eq } from 'drizzle-orm';
@@ -26,14 +28,27 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
     }
 
     let realBranchId = body.branchId;
+    let branchData = null;
+    const { branches } = await import('../../db/schema/branches');
+
     if (realBranchId === 'default') {
-      const { branches } = await import('../../db/schema/branches');
-      const [branch] = await db.select({ id: branches.id }).from(branches).where(eq(branches.tenantId, tenant.id)).limit(1);
+      const [branch] = await db.select().from(branches).where(eq(branches.tenantId, tenant.id)).limit(1);
       if (branch) {
         realBranchId = branch.id;
+        branchData = branch;
       } else {
         return { success: false, error: 'Branch not found' };
       }
+    } else {
+      const [branch] = await db.select().from(branches).where(eq(branches.id, realBranchId)).limit(1);
+      branchData = branch;
+      if (!branchData) {
+        return { success: false, error: 'Branch not found' };
+      }
+    }
+
+    if (!branchesService.isBranchOpen(branchData)) {
+      return { success: false, error: 'Restaurant is currently not accepting new orders.' };
     }
 
     // placeOrder internally creates the KOT and emits EVENTS.NEW_KOT

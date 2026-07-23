@@ -42,10 +42,33 @@ async function main() {
       name: 'Main Branch (Vashi)',
       address: 'Vashi, Navi Mumbai',
       phone: '9876543210',
+      timezone: 'Asia/Kolkata',
+      openingHours: {
+        mon: { open: "09:00", close: "22:00" },
+        tue: { open: "09:00", close: "22:00" },
+        wed: { open: "09:00", close: "22:00" },
+        thu: { open: "09:00", close: "22:00" },
+        fri: { open: "09:00", close: "22:00" },
+        sat: { open: "09:00", close: "23:00" },
+        sun: { open: "09:00", close: "23:00" }
+      }
     },
   ]).onConflictDoUpdate({
     target: [schema.branches.tenantId, schema.branches.name],
-    set: { address: 'Vashi, Navi Mumbai', phone: '9876543210' }
+    set: { 
+      address: 'Vashi, Navi Mumbai', 
+      phone: '9876543210',
+      timezone: 'Asia/Kolkata',
+      openingHours: {
+        mon: { open: "09:00", close: "22:00" },
+        tue: { open: "09:00", close: "22:00" },
+        wed: { open: "09:00", close: "22:00" },
+        thu: { open: "09:00", close: "22:00" },
+        fri: { open: "09:00", close: "22:00" },
+        sat: { open: "09:00", close: "23:00" },
+        sun: { open: "09:00", close: "23:00" }
+      }
+    }
   }).returning();
 
   if (!swamyMainBranch) throw new Error('Failed to seed swamyMainBranch');
@@ -224,6 +247,16 @@ async function main() {
         phone: faker.phone.number(),
         latitude: faker.location.latitude(),
         longitude: faker.location.longitude(),
+        timezone: 'Asia/Kolkata',
+        openingHours: {
+          mon: { open: "09:00", close: "22:00" },
+          tue: { open: "09:00", close: "22:00" },
+          wed: { open: "09:00", close: "22:00" },
+          thu: { open: "09:00", close: "22:00" },
+          fri: { open: "09:00", close: "22:00" },
+          sat: { open: "09:00", close: "23:00" },
+          sun: { open: "09:00", close: "23:00" }
+        }
       }))
     ).onConflictDoNothing().returning();
     mockBranches.push(...branches);

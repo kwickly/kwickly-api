@@ -50,7 +50,7 @@ export class TablesService {
     }));
   }
 
-  async createTable(tenantId: string, branchId: string, data: Omit<NewRestaurantTable, 'branchId'>) {
+  async createTable(tenantId: string, branchId: string, data: Omit<NewRestaurantTable, 'branchId' | 'qrToken'>) {
     await this.verifyBranchOwnership(branchId, tenantId);
     
     return await db.transaction(async (tx) => {

@@ -10,6 +10,54 @@ import { redis } from '../../shared/redis';
  */
 export class BranchesService {
   /**
+   * Determines if a branch is currently open and accepting orders.
+   */
+  isBranchOpen(branch: { status: string, openingHours: any, timezone: string }): boolean {
+    if (branch.status === 'TEMPORARILY_CLOSED' || branch.status === 'PERMANENTLY_CLOSED') {
+      return false;
+    }
+    if (!branch.openingHours || !branch.timezone) {
+      return true; // Default to open if no hours specified
+    }
+
+    // Get current date/time in the branch's timezone
+    const now = new Date();
+    
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: branch.timezone,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23' // Use 24-hour format
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(now);
+    
+    let weekday = '';
+    let hour = '';
+    let minute = '';
+    
+    for (const part of parts) {
+      if (part.type === 'weekday') weekday = part.value.toLowerCase();
+      if (part.type === 'hour') hour = part.value;
+      if (part.type === 'minute') minute = part.value;
+    }
+    
+    const todayHours = branch.openingHours[weekday];
+    if (!todayHours || !todayHours.open || !todayHours.close) {
+      return false; // Not open today
+    }
+    
+    const currentTimeStr = `${hour}:${minute}`;
+    if (currentTimeStr >= todayHours.open && currentTimeStr <= todayHours.close) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
    * Retrieves a list of all active (non-deleted) branches belonging to a specific tenant.
    *
    * @param {string} tenantId - The UUID of the tenant requesting their branches.

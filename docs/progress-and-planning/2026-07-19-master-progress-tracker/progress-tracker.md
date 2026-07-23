@@ -110,6 +110,14 @@
 - Built `/orders` as a robust Table with inline action icon buttons
 - Implemented `POST /v1/orders/admin/:id/cancel` and tied it to the frontend with automatic query invalidation
 
+### 🟡 Phase 9.7 — Shop Open/Close Controls (Order Acceptance)
+- [x] Added `timezone` to `branches` schema
+- [x] Implemented `isBranchOpen` utility evaluating business hours and timezone
+- [x] Refactored `POST /v1/orders/public/:slug` to reject orders when shop is closed
+- [x] Added `GET /v1/branches/public/:slug` for public storefronts to fetch hours
+- [ ] (Pending) Frontend: Master Toggle in Admin Header & Business Hours Config
+- [ ] (Pending) Frontend: Public About Page & Menu Checkout Blocking in Client Web
+
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API
 - Webhook handler on kwickly-api for `payment.captured`
