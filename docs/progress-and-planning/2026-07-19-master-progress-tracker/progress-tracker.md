@@ -121,6 +121,12 @@
 - [ ] (Pending) Frontend: Master Toggle in Admin Header & Business Hours Config
 - [ ] (Pending) Frontend: Public About Page & Menu Checkout Blocking in Client Web
 
+### ✅ Phase 9.8 — CSS Refactoring & Semantic Tailwind Architecture
+- Refactored kwickly-admin-web and kwickly-client to eliminate inline hardcoded hex colors and CSS.
+- Migrated all components to use Tailwind v4 CSS variables injected dynamically.
+- Implemented robust contrast calculation (`getContrastColor`) in client for accessible foregrounds.
+- Updated Dashboard charts to use CSS variables for robust theming.
+
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API
 - Webhook handler on kwickly-api for `payment.captured`
