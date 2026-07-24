@@ -521,8 +521,14 @@ export class OrdersService {
         o.payment_status as "paymentStatus",
         o.mode,
         o.table_number as "tableNumber",
-        o.subtotal,
-        o.total,
+        (
+          SELECT SUM(so.subtotal) FROM orders so 
+          WHERE (o.session_id IS NOT NULL AND so.session_id = o.session_id) OR so.id = o.id
+        ) as subtotal,
+        (
+          SELECT SUM(so.total) FROM orders so 
+          WHERE (o.session_id IS NOT NULL AND so.session_id = o.session_id) OR so.id = o.id
+        ) as total,
         o.created_at as "createdAt",
         (SELECT status FROM kots k WHERE k.order_id = o.id ORDER BY created_at DESC LIMIT 1) as "kotStatus",
         t.default_preparation_time as "defaultPreparationTime",
@@ -536,7 +542,10 @@ export class OrdersService {
             'total', oi.total,
             'fulfillmentMode', oi.fulfillment_mode
           )
-        ) FROM order_items oi WHERE oi.order_id = o.id) as items
+        ) FROM order_items oi 
+          JOIN orders so ON oi.order_id = so.id 
+          WHERE (o.session_id IS NOT NULL AND so.session_id = o.session_id) OR so.id = o.id
+        ) as items
       FROM orders o
       LEFT JOIN tenants t ON t.id = o.tenant_id
       WHERE o.id = ${orderId}

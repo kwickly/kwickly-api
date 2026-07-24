@@ -87,6 +87,21 @@ async function main() {
 
   console.log('✅ Tenant & Branding structured.');
 
+  // 4. Create Restaurant Tables
+  await db
+    .insert(schema.restaurantTables)
+    .values([
+      { branchId: branch.id, name: 'Table 1', capacity: 4, qrToken: 'pc-t1', sortOrder: 1 },
+      { branchId: branch.id, name: 'Table 2', capacity: 4, qrToken: 'pc-t2', sortOrder: 2 },
+      { branchId: branch.id, name: 'Table 3', capacity: 2, qrToken: 'pc-t3', sortOrder: 3 },
+      { branchId: branch.id, name: 'Table 4', capacity: 6, qrToken: 'pc-t4', sortOrder: 4 },
+      { branchId: branch.id, name: 'Table 5', capacity: 8, qrToken: 'pc-t5', sortOrder: 5 },
+      { branchId: branch.id, name: 'Table 6', capacity: 4, qrToken: 'pc-t6', sortOrder: 6 },
+    ])
+    .onConflictDoNothing();
+
+  console.log('✅ Restaurant Tables structured.');
+
   // Clean old menu categories for a clean reload if they exist
   const existingCats = await db
     .select()
