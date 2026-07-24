@@ -114,4 +114,4 @@ bun --hot ./index.ts
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
 
 ## 3. Scratch Scripts
-Always place temporary or one-off testing scripts in the `agent-scripts/` directory (which is git-ignored) to prevent polluting the git history.
+Always place temporary or one-off testing scripts in the `scripts/agent-scripts/` directory (which is git-ignored) to prevent polluting the git history.

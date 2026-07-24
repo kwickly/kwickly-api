@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { tablesService } from './tables.service';
-import { requireAuth } from '../auth/auth.guard.ts';
+import { requireAuth } from '../auth/auth.guard';
+import { requirePermission } from '../auth/rbac.guard';
 
 export const tablesController = new Elysia({ prefix: '/v1/tables' })
   .use(requireAuth)
@@ -9,6 +10,8 @@ export const tablesController = new Elysia({ prefix: '/v1/tables' })
   }, {
     query: t.Object({ branchId: t.String() })
   })
+
+  .use(requirePermission('tables:manage'))
 
   .post('/', async ({ body, user }) => {
     return await tablesService.createTable(user!.tenantId!, body.branchId, body);

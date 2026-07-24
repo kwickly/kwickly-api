@@ -84,6 +84,9 @@
 - Implemented plan-gated table limits and floor management
 - Created QR-based table identification and session lock
 - Implemented mixed fulfillment mode (allow takeaway on dine-in)
+- [x] Refactored `/tables` and `/tables/qr` UI with standard AppShell layouts (2026-07-24)
+- [x] Added `tables:manage` RBAC permission and complete CRUD UI (2026-07-24)
+- [x] Integrate session appending logic for QR table orders on storefront badges
 - Integrated KDS round indicators and To-Go badges
 
 ---

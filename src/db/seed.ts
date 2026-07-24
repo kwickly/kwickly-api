@@ -94,6 +94,8 @@ async function main() {
     { name: 'Manage Billing', slug: 'billing:manage', description: 'Can manage invoices and payments' },
     // Settings
     { name: 'Manage Settings', slug: 'settings:manage', description: 'Can update branch/tenant settings' },
+    // Tables
+    { name: 'Manage Tables', slug: 'tables:manage', description: 'Can add, edit, or delete physical tables' },
     // Attendance & Payroll
     { name: 'Manage Attendance', slug: 'attendance:manage', description: 'Can view and edit staff attendance' },
     { name: 'View Payroll', slug: 'payroll:view', description: 'Can view payroll history and slips' },
@@ -151,7 +153,7 @@ async function main() {
 
   // Branch Manager permissions
   const managerPermissions = seededPermissions.filter(p => 
-    ['menu:read', 'menu:write', 'orders:read', 'orders:write', 'staff:read', 'analytics:read', 'inventory:read', 'inventory:write', 'billing:manage', 'payroll:manage', 'payroll:view', 'attendance:manage'].includes(p.slug)
+    ['menu:read', 'menu:write', 'orders:read', 'orders:write', 'staff:read', 'analytics:read', 'inventory:read', 'inventory:write', 'billing:manage', 'payroll:manage', 'payroll:view', 'attendance:manage', 'tables:manage'].includes(p.slug)
   ).map(p => p.id);
   
   if (seededRoles['manager']) {

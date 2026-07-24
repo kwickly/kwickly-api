@@ -40,4 +40,4 @@ Failure to follow these rules will compromise the system's data integrity.
   - `bunx tsc --noEmit` (Strict type checking)
 
 ## 3. Scratch Scripts
-Always place temporary or one-off testing scripts in the `agent-scripts/` directory (which is git-ignored) to prevent polluting the git history.
+Always place temporary or one-off testing scripts in the `scripts/agent-scripts/` directory (which is git-ignored) to prevent polluting the git history.
