@@ -7,6 +7,7 @@ import {
   numeric,
   timestamp,
   time,
+  jsonb,
   index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
@@ -24,6 +25,12 @@ export const combos = pgTable('combos', {
   name:           text('name').notNull(),
   description:    text('description'),
   imageUrl:       text('image_url'),
+  imageMetadata: jsonb('image_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   price:          numeric('price', { precision: 10, scale: 2 }).notNull(),
   availableFrom:  time('available_from'),   // e.g. 11:00
   availableUntil: time('available_until'),  // e.g. 15:00

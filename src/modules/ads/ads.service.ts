@@ -31,6 +31,7 @@ export class AdsService {
     branchId?: string;
     title: string;
     imageUrl: string;
+    imageMetadata?: any;
     link?: string;
     activeFrom?: Date;
     activeUntil?: Date;
@@ -42,6 +43,7 @@ export class AdsService {
         branchId: payload.branchId,
         title: payload.title,
         imageUrl: payload.imageUrl,
+        imageMetadata: payload.imageMetadata,
         link: payload.link,
         activeFrom: payload.activeFrom ?? new Date(),
         activeUntil: payload.activeUntil,

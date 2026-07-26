@@ -32,6 +32,8 @@ export class CombosService {
     branchId?: string;
     name: string;
     description?: string;
+    imageUrl?: string;
+    imageMetadata?: any;
     price: string;
     items: { menuItemId: string; quantity: number }[];
   }) {
@@ -44,6 +46,8 @@ export class CombosService {
           branchId: payload.branchId || null,
           name: payload.name,
           description: payload.description,
+          imageUrl: payload.imageUrl,
+          imageMetadata: payload.imageMetadata,
           price: payload.price,
         })
         .returning();

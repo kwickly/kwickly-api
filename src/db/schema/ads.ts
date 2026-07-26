@@ -6,6 +6,7 @@ import {
   timestamp,
   boolean,
   uniqueIndex,
+  jsonb,
   index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants.ts';
@@ -24,6 +25,12 @@ export const inAppAds = pgTable('in_app_ads', {
     .references(() => branches.id, { onDelete: 'cascade' }), // Nullable = All branches
   title: text('title').notNull(),
   imageUrl: text('image_url').notNull(),
+  imageMetadata: jsonb('image_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   link: text('link'),
   activeFrom: timestamp('active_from').defaultNow().notNull(),
   activeUntil: timestamp('active_until'),

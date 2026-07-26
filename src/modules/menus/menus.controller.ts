@@ -79,6 +79,8 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     body: t.Object({
       name: t.String(),
       sortOrder: t.Optional(t.Number()),
+      imageUrl: t.Optional(t.String()),
+      imageMetadata: t.Optional(t.Any()),
     })
   })
 
@@ -94,6 +96,8 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
       categoryId: t.String(),
       name: t.String(),
       price: t.String(), // Numeric type passed as string to avoid floating point issues
+      imageUrl: t.Optional(t.String()),
+      imageMetadata: t.Optional(t.Any()),
       isVeg: t.Optional(t.Boolean()),
       isJain: t.Optional(t.Boolean()),
       isGlutenFree: t.Optional(t.Boolean()),
@@ -132,6 +136,8 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
       price: t.String(),
       status: t.Union([t.Literal('AVAILABLE'), t.Literal('OUT_OF_STOCK'), t.Literal('HIDDEN')]),
       categoryId: t.String(),
+      imageUrl: t.String(),
+      imageMetadata: t.Any(),
       isVeg: t.Boolean(),
       isJain: t.Boolean(),
       isGlutenFree: t.Boolean(),
@@ -175,6 +181,8 @@ export const menusController = new Elysia({ prefix: '/v1/menus' })
     body: t.Partial(t.Object({
       name: t.String(),
       sortOrder: t.Number(),
+      imageUrl: t.Optional(t.String()),
+      imageMetadata: t.Optional(t.Any()),
       status: t.Union([t.Literal('AVAILABLE'), t.Literal('OUT_OF_STOCK'), t.Literal('HIDDEN')])
     }))
   })

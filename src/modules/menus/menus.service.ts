@@ -3,6 +3,7 @@ import { db } from '../../db';
 import type { NewMenuCategory, NewMenuItem, NewMenuItemAddon, NewMenuItemVariant } from '../../db/schema/menus';
 import { menuCategories, menuItems, menuItemAddons, menuItemVariants } from '../../db/schema/menus';
 import { withCache, redis } from '../../shared/redis';
+import { deleteCloudinaryAsset } from '../../lib/cloudinary.ts';
 
 /**
  * Service handling all core business logic for the Restaurant Menus.
@@ -146,6 +147,10 @@ export class MenusService {
       throw new Error('Menu item not found or unauthorized');
     }
 
+    if (data.imageUrl && existing.imageUrl !== data.imageUrl && existing.imageMetadata?.publicId) {
+      await deleteCloudinaryAsset(existing.imageMetadata.publicId);
+    }
+
     const [updated] = await db.update(menuItems)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(menuItems.id, itemId))
@@ -212,6 +217,17 @@ export class MenusService {
    * Updates an existing Menu Category.
    */
   async updateCategory(tenantId: string, id: string, data: Partial<NewMenuCategory>) {
+    const [existing] = await db.select().from(menuCategories).where(
+      and(
+        eq(menuCategories.id, id),
+        eq(menuCategories.tenantId, tenantId)
+      )
+    );
+
+    if (existing && data.imageUrl && existing.imageUrl !== data.imageUrl && existing.imageMetadata?.publicId) {
+      await deleteCloudinaryAsset(existing.imageMetadata.publicId);
+    }
+
     const [updated] = await db
       .update(menuCategories)
       .set({ ...data, updatedAt: new Date() })
@@ -224,6 +240,17 @@ export class MenusService {
    * Deletes a Menu Category. Soft delete or hard delete depending on design.
    */
   async deleteCategory(tenantId: string, id: string) {
+    const [existing] = await db.select().from(menuCategories).where(
+      and(
+        eq(menuCategories.id, id),
+        eq(menuCategories.tenantId, tenantId)
+      )
+    );
+
+    if (existing?.imageMetadata?.publicId) {
+      await deleteCloudinaryAsset(existing.imageMetadata.publicId);
+    }
+
     // We will delete the category, and set its items categoryId to null or uncategorized
     await db.transaction(async (tx) => {
       await tx
@@ -242,6 +269,17 @@ export class MenusService {
    * Soft deletes a Menu Item.
    */
   async deleteMenuItem(tenantId: string, branchId: string, id: string) {
+    const [existing] = await db.select().from(menuItems).where(
+      and(
+        eq(menuItems.id, id),
+        eq(menuItems.tenantId, tenantId)
+      )
+    );
+
+    if (existing?.imageMetadata?.publicId) {
+      await deleteCloudinaryAsset(existing.imageMetadata.publicId);
+    }
+
     const [deleted] = await db
       .update(menuItems)
       .set({ deletedAt: new Date(), status: 'HIDDEN' })

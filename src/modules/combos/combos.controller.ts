@@ -31,6 +31,8 @@ export const combosController = new Elysia({ prefix: '/v1/combos' })
       branchId: t.Optional(t.String()),
       name: t.String(),
       description: t.Optional(t.String()),
+      imageUrl: t.Optional(t.String()),
+      imageMetadata: t.Optional(t.Any()),
       price: t.String(),
       items: t.Array(t.Object({
         menuItemId: t.String(),

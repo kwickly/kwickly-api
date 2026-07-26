@@ -9,6 +9,7 @@ import {
   time,
   pgEnum,
   uniqueIndex,
+  jsonb,
   index} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
@@ -29,6 +30,12 @@ export const menuCategories = pgTable('menu_categories', {
   tenantId:  uuid('tenant_id').notNull().references(() => tenants.id),
   name:      text('name').notNull(),
   imageUrl:  text('image_url'),
+  imageMetadata: jsonb('image_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   sortOrder: integer('sort_order').default(0).notNull(),
   status: menuItemStatusEnum('status').default('AVAILABLE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -47,6 +54,12 @@ export const menuItems = pgTable('menu_items', {
   description:    text('description'),
   price:          numeric('price', { precision: 10, scale: 2 }).notNull(),
   imageUrl:       text('image_url'),
+  imageMetadata: jsonb('image_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
 
   // ── Dietary flags ────────────────────────────────────────────────────────
   isVeg:          boolean('is_veg').default(true).notNull(),

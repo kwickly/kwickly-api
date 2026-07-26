@@ -1,6 +1,10 @@
 import { Elysia, t } from 'elysia';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { PlatformService } from './platform.service.ts';
+import { db } from '../../db/index.ts';
+import { tenants, tenantBrandings } from '../../db/schema/index.ts';
+import { eq } from 'drizzle-orm';
+import { deleteCloudinaryAsset } from '../../lib/cloudinary.ts';
 
 const platformService = new PlatformService();
 
@@ -106,12 +110,31 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
    * Retrieve tenant settings as a platform admin.
    */
   .get('/tenants/:id/settings', async ({ params: { id }, set }) => {
-    const [tenant] = await require('../../db/index.ts').db.select().from(require('../../db/schema/index.ts').tenants).where(require('drizzle-orm').eq(require('../../db/schema/index.ts').tenants.id, id));
-    if (!tenant) {
+    const [result] = await db
+      .select({
+        id: tenants.id,
+        name: tenants.name,
+        phone: tenants.phone,
+        email: tenants.email,
+        brandColor: tenantBrandings.brandColor,
+        logoUrl: tenantBrandings.logoUrl,
+        logoMetadata: tenantBrandings.logoMetadata,
+        logoDarkUrl: tenantBrandings.logoDarkUrl,
+        logoDarkMetadata: tenantBrandings.logoDarkMetadata,
+        faviconUrl: tenantBrandings.faviconUrl,
+        faviconMetadata: tenantBrandings.faviconMetadata,
+        themeMode: tenantBrandings.themeMode,
+        themeConfig: tenantBrandings.themeConfig,
+      })
+      .from(tenants)
+      .leftJoin(tenantBrandings, eq(tenants.id, tenantBrandings.tenantId))
+      .where(eq(tenants.id, id));
+
+    if (!result) {
       set.status = 404;
       return { success: false, error: 'Tenant not found' };
     }
-    return { success: true, data: tenant };
+    return { success: true, data: result };
   })
 
   /**
@@ -119,15 +142,76 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
    * Update tenant settings as a platform admin.
    */
   .patch('/tenants/:id/settings', async ({ params: { id }, body, set }) => {
-    const data = await platformService.updateTenant(id, body as any); // Reusing updateTenant which merges to tenants table
-    return { success: true, data, message: 'Tenant settings updated successfully' };
+    const { name, phone, email, ...brandingData } = body;
+
+    // 1. Update basic tenant table fields
+    if (name || phone || email) {
+      await platformService.updateTenant(id, { name, phone, email });
+    }
+
+    // 2. Update tenant branding table fields
+    if (Object.keys(brandingData).length > 0) {
+      const [existingBranding] = await db
+        .select()
+        .from(tenantBrandings)
+        .where(eq(tenantBrandings.tenantId, id));
+
+      if (existingBranding) {
+        // Trigger Cloudinary deletes if logo/favicon URLs are replaced
+        if (body.logoUrl && existingBranding.logoUrl !== body.logoUrl && existingBranding.logoMetadata?.publicId) {
+          await deleteCloudinaryAsset(existingBranding.logoMetadata.publicId);
+        }
+        if (body.logoDarkUrl && existingBranding.logoDarkUrl !== body.logoDarkUrl && existingBranding.logoDarkMetadata?.publicId) {
+          await deleteCloudinaryAsset(existingBranding.logoDarkMetadata.publicId);
+        }
+        if (body.faviconUrl && existingBranding.faviconUrl !== body.faviconUrl && existingBranding.faviconMetadata?.publicId) {
+          await deleteCloudinaryAsset(existingBranding.faviconMetadata.publicId);
+        }
+
+        await db
+          .update(tenantBrandings)
+          .set({
+            brandColor: brandingData.brandColor,
+            logoUrl: brandingData.logoUrl,
+            logoMetadata: brandingData.logoMetadata,
+            logoDarkUrl: brandingData.logoDarkUrl,
+            logoDarkMetadata: brandingData.logoDarkMetadata,
+            faviconUrl: brandingData.faviconUrl,
+            faviconMetadata: brandingData.faviconMetadata,
+            themeMode: brandingData.themeMode,
+            themeConfig: brandingData.themeConfig,
+            updatedAt: new Date()
+          })
+          .where(eq(tenantBrandings.tenantId, id));
+      } else {
+        await db
+          .insert(tenantBrandings)
+          .values({
+            tenantId: id,
+            brandColor: brandingData.brandColor || '#4f46e5',
+            logoUrl: brandingData.logoUrl,
+            logoMetadata: brandingData.logoMetadata,
+            logoDarkUrl: brandingData.logoDarkUrl,
+            logoDarkMetadata: brandingData.logoDarkMetadata,
+            faviconUrl: brandingData.faviconUrl,
+            faviconMetadata: brandingData.faviconMetadata,
+            themeMode: brandingData.themeMode || 'system',
+            themeConfig: brandingData.themeConfig || {},
+          });
+      }
+    }
+
+    return { success: true, message: 'Tenant settings updated successfully' };
   }, {
     body: t.Partial(t.Object({
       name: t.String(),
       brandColor: t.String(),
-      logoUrl: t.Optional(t.String({ format: 'uri' })),
-      logoDarkUrl: t.Optional(t.String({ format: 'uri' })),
-      faviconUrl: t.Optional(t.String({ format: 'uri' })),
+      logoUrl: t.Optional(t.String()),
+      logoMetadata: t.Optional(t.Any()),
+      logoDarkUrl: t.Optional(t.String()),
+      logoDarkMetadata: t.Optional(t.Any()),
+      faviconUrl: t.Optional(t.String()),
+      faviconMetadata: t.Optional(t.Any()),
       themeMode: t.Optional(t.Union([t.Literal('system'), t.Literal('light'), t.Literal('dark')])),
       themeConfig: t.Optional(t.Any()),
       phone: t.String(),

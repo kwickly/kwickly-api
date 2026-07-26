@@ -67,8 +67,26 @@ export const tenantBrandings = pgTable('tenant_brandings', {
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }).unique(),
   brandColor: text('brand_color').default('#4f46e5').notNull(),
   logoUrl: text('logo_url'),
+  logoMetadata: jsonb('logo_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   logoDarkUrl: text('logo_dark_url'),
+  logoDarkMetadata: jsonb('logo_dark_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   faviconUrl: text('favicon_url'),
+  faviconMetadata: jsonb('favicon_metadata').$type<{
+    provider: 'cloudinary' | 'r2' | 's3';
+    publicId: string;
+    format?: string;
+    bytes?: number;
+  }>(),
   themeMode: text('theme_mode').default('system').notNull(), // 'system' | 'light' | 'dark'
   themeConfig: jsonb('theme_config').$type<{
     light: Record<string, string>;

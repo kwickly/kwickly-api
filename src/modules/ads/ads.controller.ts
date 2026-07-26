@@ -49,6 +49,7 @@ export const adsController = new Elysia({ prefix: '/v1/ads' })
     body: t.Object({
       title: t.String(),
       imageUrl: t.String(),
+      imageMetadata: t.Optional(t.Any()),
       branchId: t.Optional(t.String()),
       link: t.Optional(t.String()),
       activeFrom: t.Optional(t.String()),
