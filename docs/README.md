@@ -13,6 +13,7 @@ Decisions regarding the core backend systems, API implementation, and deployment
 - [2026-06-28: Deployment and Context](architecture-and-infrastructure/2026-06-28-deployment-and-context/deployment-architecture.md)
 - [2026-07-16: API Client Integration](architecture-and-infrastructure/2026-07-16-api-client-integration/api-client-integration.md)
 - [2026-07-19: KDS Kanban Redesign & ETA System](architecture-and-infrastructure/2026-07-19-kds-kanban-and-eta/kds-kanban-and-eta.md)
+- [2026-07-26: Cloudinary Image Upload & Storage Metadata Lifecycle](architecture-and-infrastructure/2026-07-26-cloudinary-image-uploads/cloudinary-image-uploads.md)
 
 ### 🗄️ Database & Schema
 Decisions regarding the PostgreSQL database, Drizzle ORM, state management, and conventions.
