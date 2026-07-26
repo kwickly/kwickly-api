@@ -1,7 +1,10 @@
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
 import { kots } from '../../db/schema/kots.ts';
 import { eventBus, EVENTS } from '../../shared/events.ts';
+import { OrdersService } from '../orders/orders.service.ts';
+
+const ordersService = new OrdersService();
 
 /**
  * Service for handling Kitchen Order Tickets (KOTs)
@@ -12,10 +15,6 @@ export class KOTsService {
    * Enforces tenant isolation.
    */
   async updateKOTStatus(tenantId: string, kotId: string, status: 'pending' | 'preparing' | 'ready' | 'completed') {
-    // Note: To enforce tenant isolation properly, we'd need to join with branches or orders.
-    // For brevity in this transaction, we fetch the KOT and ensure it belongs to a branch of the tenant.
-    // In a real strict environment, we could do a nested select.
-    
     const [updated] = await db.update(kots)
       .set({ 
         status, 
@@ -28,6 +27,9 @@ export class KOTsService {
     if (!updated) {
       throw new Error('KOT not found');
     }
+
+    // Sync the master order status with the new KOT state
+    await ordersService.syncOrderStatusWithKOTs(updated.orderId);
 
     // Broadcast the status update back to the KDS or Waiter tablets
     eventBus.emit(EVENTS.KOT_UPDATED, {

@@ -58,4 +58,14 @@ export const tablesController = new Elysia({ prefix: '/v1/tables' })
     return await tablesService.closeSession(params.id, body.branchId, user!.tenantId!);
   }, {
     body: t.Object({ branchId: t.String() })
+  })
+
+  .post('/transfer', async ({ body, user }) => {
+    return await tablesService.transferTable(user!.tenantId!, body.branchId, body.orderId, body.toTableId);
+  }, {
+    body: t.Object({
+      branchId: t.String(),
+      orderId: t.String(),
+      toTableId: t.String(),
+    })
   });

@@ -12,7 +12,7 @@ const billingService = new BillingService();
 const branchesService = new BranchesService();
 import { db } from '../../db';
 import { tenants } from '../../db/schema/tenants';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 
 export const ordersController = new Elysia({ prefix: '/v1/orders' })
   /**
@@ -27,9 +27,25 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
       return { success: false, error: 'Restaurant not found' };
     }
 
+    // 1. Validation for dine_in mode & qrToken
+    if (body.mode === 'dine_in' && !body.qrToken) {
+      return { success: false, error: 'Dine-in orders require a valid table QR code.' };
+    }
+
     let realBranchId = body.branchId;
     let branchData = null;
     const { branches } = await import('../../db/schema/branches');
+
+    // 2. Validate and resolve table via qrToken (if present)
+    if (body.qrToken) {
+      const { restaurantTables } = await import('../../db/schema/restaurant_tables');
+      const [table] = await db.select().from(restaurantTables).where(eq(restaurantTables.qrToken, body.qrToken)).limit(1);
+      if (!table) {
+        return { success: false, error: 'Invalid or inactive table QR code.' };
+      }
+      // Override branchId with the table's branchId to prevent cross-branch ordering
+      realBranchId = table.branchId;
+    }
 
     if (realBranchId === 'default') {
       const [branch] = await db.select().from(branches).where(eq(branches.tenantId, tenant.id)).limit(1);
@@ -86,6 +102,11 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
       tableNumber: t.Optional(t.String()),
       qrToken: t.Optional(t.String()),
       note: t.Optional(t.String()),
+      mode: t.Optional(t.Union([
+        t.Literal('dine_in'),
+        t.Literal('takeaway'),
+        t.Literal('delivery')
+      ])),
       items: t.Array(
         t.Object({
           menuItemId: t.String(),
@@ -241,12 +262,57 @@ export const ordersController = new Elysia({ prefix: '/v1/orders' })
       eventBus.on(EVENTS.KOT_UPDATED, onStatusUpdated);
       eventBus.on(EVENTS.NEW_KOT, onStatusUpdated);
 
-      // Clean up the listener when the connection drops
-      request.signal.addEventListener('abort', () => {
-        eventBus.off(EVENTS.KOT_UPDATED, onStatusUpdated);
-        eventBus.off(EVENTS.NEW_KOT, onStatusUpdated);
+      // Keep the stream open by waiting for the abort signal in a Promise
+      await new Promise<void>((resolve) => {
+        // Send a keep-alive heartbeat ping every 15 seconds
+        const heartbeatInterval = setInterval(() => {
+          try {
+            stream.event = 'ping';
+            stream.send('keep-alive');
+          } catch (e) {
+            // If connection is already broken, clean up
+            clearInterval(heartbeatInterval);
+            eventBus.off(EVENTS.KOT_UPDATED, onStatusUpdated);
+            eventBus.off(EVENTS.NEW_KOT, onStatusUpdated);
+            resolve();
+          }
+        }, 15000);
+
+        request.signal.addEventListener('abort', () => {
+          clearInterval(heartbeatInterval);
+          eventBus.off(EVENTS.KOT_UPDATED, onStatusUpdated);
+          eventBus.off(EVENTS.NEW_KOT, onStatusUpdated);
+          resolve();
+        });
       });
     });
+  })
+
+  /**
+   * GET /v1/orders/public/:slug/tables
+   * Retrieves all physical tables for a given tenant.
+   */
+  .get('/public/:slug/tables', async ({ params: { slug } }) => {
+    const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
+    if (!tenant) return { success: false, error: 'Restaurant not found' };
+
+    const { branches } = await import('../../db/schema/branches');
+    const [branch] = await db.select().from(branches).where(eq(branches.tenantId, tenant.id)).limit(1);
+    if (!branch) return { success: false, error: 'Branch not found' };
+
+    const { restaurantTables } = await import('../../db/schema/restaurant_tables');
+    const tables = await db.select()
+      .from(restaurantTables)
+      .where(and(
+        eq(restaurantTables.branchId, branch.id),
+        isNull(restaurantTables.deletedAt)
+      ))
+      .orderBy(restaurantTables.sortOrder);
+
+    return {
+      success: true,
+      tables: tables.map(t => ({ id: t.id, name: t.name, qrToken: t.qrToken, status: t.status }))
+    };
   })
 
   // --- Auth Required Below Here ---

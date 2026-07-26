@@ -126,7 +126,7 @@ describe('Orders Module E2E', () => {
     expect(response.status).toBe(200);
     const body: any = await response.json();
     expect(body.success).toBe(true);
-    expect(body.data.order.id).toBe('mock-order-id');
+    expect(body.order.id).toBe('mock-order-id');
   });
 
   it('should calculate cart total correctly matching server-side expectations', async () => {
@@ -150,6 +150,24 @@ describe('Orders Module E2E', () => {
     expect(response.status).toBe(200);
     const body: any = await response.json();
     // 200 + 150 = 350
-    expect(body.data.order.total).toBe('350');
+    expect(body.order.total).toBe('350');
+  });
+
+  it('should return success: false and error message for public dine-in order if qrToken is missing', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/v1/orders/public/punjabi-chaska', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchId: 'test-branch',
+          mode: 'dine_in',
+          items: [{ menuItemId: 'item-1', quantity: 1 }],
+        }),
+      })
+    );
+    expect(response.status).toBe(200);
+    const body: any = await response.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe('Dine-in orders require a valid table QR code.');
   });
 });

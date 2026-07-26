@@ -4,6 +4,7 @@ import { restaurantTables, tableSessions, kots, orders } from '../../db/schema';
 import { tenants } from '../../db/schema/tenants';
 import type { NewRestaurantTable } from '../../db/schema/restaurant_tables';
 import crypto from 'crypto';
+import { eventBus, EVENTS } from '../../shared/events.ts';
 
 function generateQrToken() {
   return crypto.randomBytes(4).toString('hex'); // 8 char hex string
@@ -132,6 +133,67 @@ export class TablesService {
         .where(eq(restaurantTables.id, session.tableId));
 
       return { success: true };
+    });
+  }
+
+  async transferTable(tenantId: string, branchId: string, orderId: string, toTableId: string) {
+    await this.verifyBranchOwnership(branchId, tenantId);
+
+    return await db.transaction(async (tx) => {
+      // 1. Fetch destination table
+      const [toTable] = await tx.select().from(restaurantTables)
+        .where(and(eq(restaurantTables.id, toTableId), eq(restaurantTables.branchId, branchId), isNull(restaurantTables.deletedAt)))
+        .limit(1);
+      if (!toTable) throw new Error('Destination table not found');
+      if (toTable.status !== 'available') throw new Error('Destination table is not available (occupied/reserved)');
+
+      // 2. Fetch order
+      const [order] = await tx.select().from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.tenantId, tenantId)))
+        .limit(1);
+      if (!order) throw new Error('Order not found');
+      if (!order.sessionId) throw new Error('Order is not associated with an active session');
+
+      // 3. Fetch active table session
+      const [session] = await tx.select().from(tableSessions)
+        .where(eq(tableSessions.id, order.sessionId))
+        .limit(1);
+      if (!session) throw new Error('Active session not found');
+
+      const fromTableId = session.tableId;
+
+      // 4. Update table session to point to destination table
+      await tx.update(tableSessions)
+        .set({ tableId: toTableId, updatedAt: new Date() })
+        .where(eq(tableSessions.id, session.id));
+
+      // 5. Update order record to point to destination table and update tableNumber
+      const [updatedOrder] = await tx.update(orders)
+        .set({ tableId: toTableId, tableNumber: toTable.name, updatedAt: new Date() })
+        .where(eq(orders.id, orderId))
+        .returning();
+
+      // 6. Free up source table
+      await tx.update(restaurantTables)
+        .set({ currentSessionId: null, status: 'available', updatedAt: new Date() })
+        .where(eq(restaurantTables.id, fromTableId));
+
+      // 7. Occupy destination table
+      await tx.update(restaurantTables)
+        .set({ currentSessionId: session.id, status: 'occupied', updatedAt: new Date() })
+        .where(eq(restaurantTables.id, toTableId));
+
+      // 8. Fetch KOTs to broadcast updates to KDS so it refreshes its layout
+      const activeKots = await tx.select().from(kots).where(eq(kots.orderId, orderId));
+      for (const kot of activeKots) {
+        eventBus.emit(EVENTS.KOT_UPDATED, {
+          branchId,
+          kot,
+          order: updatedOrder
+        });
+      }
+
+      return { success: true, order: updatedOrder };
     });
   }
 }

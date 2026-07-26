@@ -1,6 +1,6 @@
 # Kwickly Platform — Master Progress Tracker
 
-**Last Updated:** 2026-07-19  
+**Last Updated:** 2026-07-26  
 **Source of Truth Repo:** kwickly-api (mirrored to admin-web and client)
 
 > This document is the canonical progress tracker for the entire Kwickly platform.  
@@ -87,7 +87,6 @@
 - [x] Refactored `/tables` and `/tables/qr` UI with standard AppShell layouts (2026-07-24)
 - [x] Added `tables:manage` RBAC permission and complete CRUD UI (2026-07-24)
 - [x] Integrate session appending logic for QR table orders on storefront badges
-- Integrated KDS round indicators and To-Go badges
 
 ---
 
@@ -126,6 +125,12 @@
 - Migrated all components to use Tailwind v4 CSS variables injected dynamically.
 - Implemented robust contrast calculation (`getContrastColor`) in client for accessible foregrounds.
 - Updated Dashboard charts to use CSS variables for robust theming.
+
+### ✅ Phase 9.9 — Table Transfer, Direct Walk-in Table Selection & Verification
+- Consolidated custom database seeding and integrated cascade SQL resets into a single script.
+- Implemented strict backend validations rejecting tableless dine-in orders and auto-resolving branch IDs via QR codes.
+- Added client-side dropdown selection for walk-in dine-in checkout flows to link to valid table sessions.
+- Built a transactional table transfer API and a responsive Dialog modal in the admin panel to move active orders.
 
 ### 🔴 Phase 10 — Online Payments (Razorpay)
 - Wire checkout to Razorpay orders API

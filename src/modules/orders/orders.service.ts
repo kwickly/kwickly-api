@@ -483,6 +483,9 @@ export class OrdersService {
       throw new Error('KOT not found');
     }
 
+    // Sync order status
+    await this.syncOrderStatusWithKOTs(updated.orderId);
+
     // Broadcast the KOT status update
     eventBus.emit(EVENTS.KOT_UPDATED, { branchId: updated.branchId, kot: updated });
     
@@ -561,6 +564,55 @@ export class OrdersService {
   }
 
   /**
+   * Synchronizes the status of an Order with its constituent KOTs.
+   * Runs whenever KOT statuses change to ensure database integrity.
+   */
+  async syncOrderStatusWithKOTs(orderId: string) {
+    // 1. Fetch all non-deleted KOTs for this order
+    const orderKots = await db.select().from(kots).where(
+      and(
+        eq(kots.orderId, orderId),
+        sql`${kots.deletedAt} IS NULL`
+      )
+    );
+    if (orderKots.length === 0) return;
+
+    // 2. Fetch the current order status
+    const [existingOrder] = await db.select({ status: orders.status }).from(orders).where(eq(orders.id, orderId)).limit(1);
+    if (!existingOrder || existingOrder.status === 'cancelled') {
+      // Do not sync if order is cancelled
+      return;
+    }
+
+    // 3. Determine the new order status based on KOT statuses
+    let newStatus: 'pending' | 'accepted' | 'preparing' | 'ready' | 'delivered' = 'accepted';
+
+    const allCompleted = orderKots.every((k) => k.status === 'completed');
+    const anyReady = orderKots.some((k) => k.status === 'ready');
+    const anyPreparing = orderKots.some((k) => k.status === 'preparing');
+    const anyPending = orderKots.some((k) => k.status === 'pending');
+
+    if (allCompleted) {
+      newStatus = 'delivered';
+    } else if (anyReady) {
+      newStatus = 'ready';
+    } else if (anyPreparing) {
+      newStatus = 'preparing';
+    } else if (anyPending) {
+      newStatus = 'accepted';
+    }
+
+    if (existingOrder.status !== newStatus) {
+      await db.update(orders)
+        .set({ status: newStatus, updatedAt: new Date() })
+        .where(eq(orders.id, orderId));
+      
+      // Also emit a KOT_UPDATED event to trigger public status refresh
+      eventBus.emit(EVENTS.KOT_UPDATED, { orderId });
+    }
+  }
+
+  /**
    * Cancel an order by Admin/Tenant
    */
   async cancelOrder(orderId: string) {
@@ -574,17 +626,32 @@ export class OrdersService {
     }
 
     // Cancel all associated KOTs that aren't completed
-    await db.update(kots)
+    const updatedKots = await db.update(kots)
       .set({ status: 'completed', updatedAt: new Date() }) // KDS treats cancelled as completed/cleared
       .where(
         and(
           eq(kots.orderId, orderId),
           inArray(kots.status, ['pending', 'preparing', 'ready'])
         )
-      );
+      )
+      .returning();
 
-    // Emit event so SSE clients (like the tracking page) get the update
-    eventBus.emit(EVENTS.KOT_UPDATED, { orderId: updatedOrder.id }); // Using KOT_UPDATED to trigger the status_update SSE
+    // Broadcast update for each KOT so both KDS (WebSocket topic routing) and client tracking page (SSE) get updates
+    if (updatedKots.length > 0) {
+      for (const kot of updatedKots) {
+        eventBus.emit(EVENTS.KOT_UPDATED, {
+          branchId: kot.branchId,
+          kot,
+          orderId,
+        });
+      }
+    } else {
+      // If there were no active KOTs, just emit a general order status update
+      eventBus.emit(EVENTS.KOT_UPDATED, {
+        branchId: updatedOrder.branchId,
+        orderId,
+      });
+    }
 
     return updatedOrder;
   }
