@@ -732,6 +732,7 @@ async function seedPunjabiChaskaLocal() {
     .values({
       tenantId: tenant.id,
       brandColor: '#eab308', // Amber/Yellow
+      logoUrl: '/logo.png',
       themeMode: 'light',
       enabledModules: {
         dineIn: true,
@@ -744,6 +745,7 @@ async function seedPunjabiChaskaLocal() {
       target: schema.tenantBrandings.tenantId,
       set: {
         brandColor: '#eab308',
+        logoUrl: '/logo.png',
         enabledModules: {
           dineIn: true,
           takeaway: true,
