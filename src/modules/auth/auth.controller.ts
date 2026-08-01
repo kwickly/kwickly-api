@@ -237,12 +237,20 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
     try {
       const updatedUser = await authService.updateProfile(user.sub, {
         name: body.name,
-        phone: body.phone
+        phone: body.phone,
+        jobTitle: body.jobTitle,
+        timezone: body.timezone,
+        bio: body.bio,
+        avatarUrl: body.avatarUrl
       });
       return { success: true, user: {
         id: updatedUser.id,
         name: updatedUser.name,
-        phone: updatedUser.phone
+        phone: updatedUser.phone,
+        jobTitle: updatedUser.jobTitle,
+        timezone: updatedUser.timezone,
+        bio: updatedUser.bio,
+        avatarUrl: updatedUser.avatarUrl
       } };
     } catch (e: any) {
       set.status = 400;
@@ -251,6 +259,10 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
   }, {
     body: t.Object({
       name: t.Optional(t.String()),
-      phone: t.Optional(t.String())
+      phone: t.Optional(t.String()),
+      jobTitle: t.Optional(t.String()),
+      timezone: t.Optional(t.String()),
+      bio: t.Optional(t.String()),
+      avatarUrl: t.Optional(t.String())
     })
   });

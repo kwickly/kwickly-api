@@ -65,7 +65,9 @@ export const tenants = pgTable('tenants', {
 export const tenantBrandings = pgTable('tenant_brandings', {
   id: uuid('id').defaultRandom().primaryKey(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }).unique(),
-  brandColor: text('brand_color').default('#4f46e5').notNull(),
+  brandColor: text('brand_color').default('#EE3B2B').notNull(),
+  brandColorSecondary: text('brand_color_secondary'),
+  borderRadius: text('border_radius').default('0.5rem').notNull(),
   logoUrl: text('logo_url'),
   logoMetadata: jsonb('logo_metadata').$type<{
     provider: 'cloudinary' | 'r2' | 's3';

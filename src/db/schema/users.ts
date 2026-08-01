@@ -38,6 +38,9 @@ export const users = pgTable('users', {
   roleId:      uuid('role_id').references(() => roles.id), // Dynamic custom roles
   posPin:      text('pos_pin'), // Hashed 4-digit PIN for fast POS login
   avatarUrl:   text('avatar_url'),
+  jobTitle:    text('job_title'),
+  timezone:    text('timezone').default('UTC'),
+  bio:         text('bio'),
   status: userStatusEnum('status').default('ACTIVE').notNull(),
   lastLoginAt: timestamp('last_login_at'),
   createdAt:   timestamp('created_at').defaultNow().notNull(),

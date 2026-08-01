@@ -272,7 +272,7 @@ export class AuthService {
   /**
    * Updates basic profile information.
    */
-  async updateProfile(userId: string, data: { name?: string; phone?: string }) {
+  async updateProfile(userId: string, data: { name?: string; phone?: string; jobTitle?: string; timezone?: string; bio?: string; avatarUrl?: string }) {
     const [updatedUser] = await db.update(users)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, userId))
