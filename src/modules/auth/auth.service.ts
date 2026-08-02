@@ -166,9 +166,9 @@ export class AuthService {
   /**
    * Creates a long-lived refresh token session in the DB.
    */
-  async createSession(userId: string, deviceInfo: string): Promise<string> {
+  async createSession(userId: string, deviceInfo: string, expiresInDays: number = 30): Promise<string> {
     const refreshToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000); 
 
     await db.insert(sessions).values({
       userId,

@@ -36,6 +36,52 @@ async function main() {
 
   if (!swamyTenant) throw new Error('Failed to seed swamyTenant');
 
+  const [punjabiTenant] = await db.insert(schema.tenants).values([
+    {
+      name: 'Punjabi Chaska',
+      slug: 'punjabi-chaska',
+      email: 'contact@punjabichaska.com',
+      phone: '9999888877',
+      address: 'Sector 17, Vashi, Navi Mumbai',
+      baseCurrency: 'INR',
+      plan: 'GROWTH',
+      billingModel: 'FLAT',
+      baseFee: '3499.00',
+      maxOrdersPerMonth: 2000,
+    },
+  ]).onConflictDoUpdate({
+    target: schema.tenants.slug,
+    set: {
+      name: 'Punjabi Chaska',
+      email: 'contact@punjabichaska.com',
+      phone: '9999888877',
+      address: 'Sector 17, Vashi, Navi Mumbai',
+      baseCurrency: 'INR',
+      plan: 'GROWTH',
+      billingModel: 'FLAT',
+      baseFee: '3499.00',
+      maxOrdersPerMonth: 2000,
+    }
+  }).returning();
+
+  if (!punjabiTenant) throw new Error('Failed to seed punjabiTenant');
+
+  // Create tenant branding for Punjabi Chaska
+  await db.insert(schema.tenantBrandings).values({
+    tenantId: punjabiTenant.id,
+    brandColor: '#eab308',
+    brandColorSecondary: '#d97706',
+    borderRadius: '0.5rem',
+    logoUrl: '/logo.png',
+    themeMode: 'light',
+    enabledModules: {
+      dineIn: true,
+      takeaway: true,
+      delivery: true,
+      subscriptions: false
+    }
+  }).onConflictDoNothing();
+
   const [kwicklyTenant] = await db.insert(schema.tenants).values([
     {
       name: 'Kwickly HQ',
@@ -87,6 +133,25 @@ async function main() {
   }).returning();
 
   if (!swamyMainBranch) throw new Error('Failed to seed swamyMainBranch');
+
+  const [punjabiMainBranch] = await db.insert(schema.branches).values([
+    {
+      tenantId: punjabiTenant.id,
+      name: 'Main Branch (Vashi)',
+      address: 'Sector 17, Vashi, Navi Mumbai',
+      phone: '9999888877',
+      timezone: 'Asia/Kolkata',
+    },
+  ]).onConflictDoUpdate({
+    target: [schema.branches.tenantId, schema.branches.name],
+    set: { 
+      address: 'Sector 17, Vashi, Navi Mumbai', 
+      phone: '9999888877',
+      timezone: 'Asia/Kolkata',
+    }
+  }).returning();
+
+  if (!punjabiMainBranch) throw new Error('Failed to seed punjabiMainBranch');
 
   // 3. RBAC Seed
   console.log('🔐 Seeding Granular RBAC...');
@@ -225,6 +290,64 @@ async function main() {
       posPin: await Bun.password.hash('1234'), // Hashed 1234 PIN
       role: 'staff' as const,
       roleId: seededRoles['manager'].id,
+    },
+    {
+      tenantId: swamyTenant.id,
+      branchId: swamyMainBranch.id,
+      name: 'Vashi Cashier',
+      email: 'cashier@swamy.com',
+      phone: '3333333333',
+      password: mockPassword,
+      posPin: await Bun.password.hash('1234'),
+      role: 'staff' as const,
+      roleId: seededRoles['cashier'].id,
+    },
+    {
+      tenantId: swamyTenant.id,
+      branchId: swamyMainBranch.id,
+      name: 'Vashi Kitchen',
+      email: 'kitchen@swamy.com',
+      phone: '4444444444',
+      password: mockPassword,
+      role: 'staff' as const,
+      roleId: seededRoles['kitchen_staff'].id,
+    },
+    {
+      tenantId: swamyTenant.id,
+      branchId: swamyMainBranch.id,
+      name: 'Vashi Scanner',
+      email: 'qr@swamy.com',
+      phone: '5555555555',
+      password: mockPassword,
+      role: 'staff' as const,
+      roleId: seededRoles['qr_scanner'].id,
+    },
+    {
+      tenantId: swamyTenant.id,
+      name: 'Loyal Customer',
+      email: 'customer@swamy.com',
+      phone: '6666666666',
+      password: mockPassword,
+      role: 'customer' as const,
+    },
+    {
+      tenantId: punjabiTenant.id,
+      name: 'Punjabi Owner',
+      email: 'owner@punjabichaska.com',
+      phone: '7777777777',
+      password: mockPassword,
+      role: 'tenant_owner' as const,
+    },
+    {
+      tenantId: punjabiTenant.id,
+      branchId: punjabiMainBranch.id,
+      name: 'Punjabi Manager',
+      email: 'manager@punjabichaska.com',
+      phone: '8888888888',
+      password: mockPassword,
+      posPin: await Bun.password.hash('1234'),
+      role: 'staff' as const,
+      roleId: seededRoles['manager'].id,
     }
   ];
 
@@ -254,7 +377,7 @@ async function main() {
   // Mock Branches
   console.log('   - More Branches...');
   const mockBranches: schema.Branch[] = [];
-  for (const t of [...mockTenants, swamyTenant]) {
+  for (const t of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!t) continue;
     const branches = await db.insert(schema.branches).values(
       Array.from({ length: faker.number.int({ min: 1, max: 2 }) }).map(() => ({
@@ -281,7 +404,7 @@ async function main() {
 
   // Mock Users (Staff & Customers & Platform Admins)
   console.log('   - Staff, Customers & Platform Admins...');
-  const allBranches = [...mockBranches, swamyMainBranch];
+  const allBranches = [...mockBranches, swamyMainBranch, punjabiMainBranch];
   
   // Seed randomized super_admins and platform_owners
   const platformAdminUsers = await db.insert(schema.users).values(
@@ -337,7 +460,7 @@ async function main() {
 
   // Mock Menu Categories & Items
   console.log('   - Menus & Categories...');
-  for (const tenant of [...mockTenants, swamyTenant]) {
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!tenant) continue;
     const categoryData = ['Starters', 'Main Course', 'Desserts', 'Beverages'].map((name, index) => ({
       tenantId: tenant.id,
@@ -394,7 +517,7 @@ async function main() {
 
   // Mock Inventory
   console.log('   - Inventory & Stock...');
-  for (const tenant of [...mockTenants, swamyTenant]) {
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!tenant) continue;
     const materials = await db.insert(schema.rawMaterials).values(
       Array.from({ length: 5 }).map(() => ({
@@ -513,7 +636,7 @@ async function main() {
 
   // Mock Promotions & Ads
   console.log('   - Promotions & Ads...');
-  for (const tenant of [...mockTenants, swamyTenant]) {
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!tenant) continue;
     await db.insert(schema.coupons).values({
       tenantId: tenant.id,
@@ -577,7 +700,7 @@ async function main() {
 
   // Mock Leaves & Holidays
   console.log('   - Leaves & Holidays...');
-  for (const tenant of [...mockTenants, swamyTenant]) {
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!tenant) continue;
     
     const startOfMonth = new Date();
@@ -613,7 +736,7 @@ async function main() {
 
   // Mock Payroll Runs
   console.log('   - Payroll & Salary Slips...');
-  for (const tenant of [...mockTenants, swamyTenant]) {
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
     if (!tenant) continue;
     
     // Create a draft payroll run for current month
@@ -664,102 +787,86 @@ async function main() {
     }
   }
 
+  // Mock Support Tickets
+  console.log('   - Support Tickets...');
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
+    if (!tenant) continue;
+    const firstPlatformAdmin = platformAdminUsers[0];
+    const tenantStaff = allStaff.filter(s => s.tenantId === tenant.id);
+
+    for (let i = 0; i < 3; i++) {
+      const [ticket] = await db.insert(schema.supportTickets).values({
+        tenantId: tenant.id,
+        createdById: tenantStaff[0]?.id || platformAdminUsers[0]!.id,
+        assignedToId: firstPlatformAdmin ? firstPlatformAdmin.id : null,
+        subject: faker.helpers.arrayElement(['POS not syncing', 'Printer setup issue', 'Billing inquiry', 'Feature request']),
+        description: faker.lorem.paragraph(),
+        status: faker.helpers.arrayElement(['OPEN', 'IN_PROGRESS', 'RESOLVED']),
+        priority: faker.helpers.arrayElement(['LOW', 'MEDIUM', 'HIGH']),
+        category: faker.helpers.arrayElement(['BUG', 'BILLING', 'OTHER']),
+      }).returning();
+
+      if (ticket && firstPlatformAdmin) {
+        await db.insert(schema.ticketMessages).values({
+          ticketId: ticket.id,
+          senderId: firstPlatformAdmin.id,
+          message: 'We are looking into this right now. Thanks!',
+        });
+      }
+    }
+  }
+
+  // Mock Subscriptions (Customer Meal Plans)
+  console.log('   - Subscriptions...');
+  for (const tenant of [...mockTenants, swamyTenant, punjabiTenant]) {
+    if (!tenant) continue;
+    
+    // Create a generic meal plan for the tenant
+    const [plan] = await db.insert(schema.subscriptionPlans).values({
+      tenantId: tenant.id,
+      name: '30-Day Lunch Plan',
+      description: 'Daily lunch for 30 days',
+      mealType: 'lunch',
+      planType: 'meal_count',
+      totalMeals: 30,
+      validityDays: 30,
+      price: '2500.00',
+    }).returning();
+
+    if (!plan) continue;
+
+    // Assign plan to some customers
+    const tenantCustomers = customers.filter(c => c.tenantId === tenant.id);
+    for (let i = 0; i < Math.min(3, tenantCustomers.length); i++) {
+      const customer = tenantCustomers[i];
+      if (!customer) continue;
+
+      const startsAt = new Date();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + plan.validityDays);
+
+      await db.insert(schema.customerSubscriptions).values({
+        tenantId: tenant.id,
+        customerId: customer.id,
+        planId: plan.id,
+        status: 'active',
+        totalMeals: plan.totalMeals,
+        balanceRemaining: plan.totalMeals - faker.number.int({ min: 0, max: 10 }),
+        startsAt: startsAt,
+        expiresAt: expiresAt,
+        qrSecret: faker.string.alphanumeric(16),
+      }).onConflictDoNothing();
+    }
+  }
+
   console.log('✅ Base seeding completed successfully!');
-  await seedPunjabiChaskaLocal();
+  await seedPunjabiChaskaLocal(punjabiTenant, punjabiMainBranch);
   console.log('🎉 All seed scripts completed!');
   process.exit(0);
 }
 
-async function seedPunjabiChaskaLocal() {
-  console.log('🌱 Onboarding tenant: Punjabi Chaska...');
-
-  // 1. Create or update tenant
-  const [tenant] = await db
-    .insert(schema.tenants)
-    .values({
-      name: 'Punjabi Chaska',
-      slug: 'punjabi-chaska',
-      email: 'contact@punjabichaska.com',
-      phone: '9999888877',
-      address: 'Sector 17, Vashi, Navi Mumbai',
-      baseCurrency: 'INR',
-      plan: 'GROWTH',
-      billingModel: 'FLAT',
-      baseFee: '3499.00',
-      maxOrdersPerMonth: 2000,
-    })
-    .onConflictDoUpdate({
-      target: schema.tenants.slug,
-      set: {
-        name: 'Punjabi Chaska',
-        email: 'contact@punjabichaska.com',
-        phone: '9999888877',
-        address: 'Sector 17, Vashi, Navi Mumbai',
-        baseCurrency: 'INR',
-        plan: 'GROWTH',
-        billingModel: 'FLAT',
-        baseFee: '3499.00',
-        maxOrdersPerMonth: 2000,
-      },
-    })
-    .returning();
-
-  if (!tenant) throw new Error('Failed to create/update tenant Punjabi Chaska');
-
-  // 2. Create default branch
-  const [branch] = await db
-    .insert(schema.branches)
-    .values({
-      tenantId: tenant.id,
-      name: 'Main Branch (Vashi)',
-      address: 'Sector 17, Vashi, Navi Mumbai',
-      phone: '9999888877',
-    })
-    .onConflictDoUpdate({
-      target: [schema.branches.tenantId, schema.branches.name],
-      set: {
-        address: 'Sector 17, Vashi, Navi Mumbai',
-        phone: '9999888877',
-      },
-    })
-    .returning();
-
-  if (!branch) throw new Error('Failed to create/update default branch');
-
-  // 3. Create tenant branding
-  await db
-    .insert(schema.tenantBrandings)
-    .values({
-      tenantId: tenant.id,
-      brandColor: '#eab308', // Amber/Yellow
-      brandColorSecondary: '#d97706',
-      borderRadius: '0.5rem',
-      logoUrl: '/logo.png',
-      themeMode: 'light',
-      enabledModules: {
-        dineIn: true,
-        takeaway: true,
-        delivery: true,
-        subscriptions: true,
-      },
-    })
-    .onConflictDoUpdate({
-      target: schema.tenantBrandings.tenantId,
-      set: {
-        brandColor: '#eab308',
-        brandColorSecondary: '#d97706',
-        borderRadius: '0.5rem',
-        logoUrl: '/logo.png',
-        enabledModules: {
-          dineIn: true,
-          takeaway: true,
-          delivery: true,
-          subscriptions: true,
-        },
-      },
-    });
-
-  console.log('✅ Tenant & Branding structured.');
+async function seedPunjabiChaskaLocal(tenant: typeof schema.tenants.$inferSelect, branch: typeof schema.branches.$inferSelect) {
+  console.log('🌱 Seeding specific menus and tables for Punjabi Chaska...');
 
   // 4. Create Restaurant Tables
   await db

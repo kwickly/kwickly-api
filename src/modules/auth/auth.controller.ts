@@ -77,7 +77,8 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
       const user = await authService.loginWithPassword(body.email, body.password);
       const deviceInfo = headers['user-agent'] || 'Unknown Device';
       
-      const refreshToken = await authService.createSession(user.id, deviceInfo);
+      const expiresInDays = body.keepMeLoggedIn ? 30 : 1; // 30 days vs 1 day
+      const refreshToken = await authService.createSession(user.id, deviceInfo, expiresInDays);
       
       const accessToken = await jwt.sign({
         sub: user.id,
@@ -115,7 +116,8 @@ export const authController = new Elysia({ prefix: '/v1/auth' })
   }, {
     body: t.Object({
       email: t.String(),
-      password: t.String()
+      password: t.String(),
+      keepMeLoggedIn: t.Optional(t.Boolean())
     })
   })
 

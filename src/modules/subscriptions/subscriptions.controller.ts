@@ -2,10 +2,47 @@ import { Elysia, t } from 'elysia';
 import { SubscriptionsService } from './subscriptions.service.ts';
 import { requireAuth } from '../auth/auth.guard.ts';
 import { requirePermission } from '../auth/rbac.guard.ts';
+import { db } from '../../db';
+import { tenants, tenantBrandings } from '../../db/schema';
+import { eq, or } from 'drizzle-orm';
 
 const subscriptionsService = new SubscriptionsService();
 
 export const subscriptionsController = new Elysia({ prefix: '/v1/subscriptions' })
+  // Public endpoint to get plans by tenant hostname
+  .get('/public/plans', async ({ query }) => {
+    try {
+      const hostname = query.hostname as string;
+      if (!hostname) return { success: false, error: 'Hostname required' };
+
+      let slug = hostname;
+      if (hostname.includes('kwickly.com') || hostname.includes('localhost')) {
+        slug = hostname.split('.')[0] || hostname;
+      }
+
+      const tenantResult = await db.select({ id: tenants.id })
+        .from(tenants)
+        .leftJoin(tenantBrandings, eq(tenants.id, tenantBrandings.tenantId))
+        .where(or(eq(tenants.slug, slug), eq(tenantBrandings.customDomain, hostname)))
+        .limit(1);
+
+      if (!tenantResult || tenantResult.length === 0 || !tenantResult[0]?.id) {
+        return { success: false, error: 'Tenant not found' };
+      }
+
+      const plans = await subscriptionsService.getPlans(tenantResult[0].id, undefined, false);
+      return { success: true, data: plans };
+    } catch (err) {
+      console.error('Failed to get public plans', err);
+      return { success: false, error: 'Internal server error' };
+    }
+  }, {
+    query: t.Object({
+      hostname: t.String()
+    })
+  })
+
+  // Authenticated routes below
   .use(requireAuth)
   
   // Get available plans (Any authenticated user can see plans for a branch)

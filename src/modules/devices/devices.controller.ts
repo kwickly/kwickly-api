@@ -8,7 +8,7 @@ import { eq, and } from 'drizzle-orm';
 
 const devicesService = new DevicesService();
 
-export const devicesController = new Elysia({ prefix: '/devices' })
+export const devicesController = new Elysia({ prefix: '/v1/devices' })
   .use(requireAuth)
   
   // List devices for a branch

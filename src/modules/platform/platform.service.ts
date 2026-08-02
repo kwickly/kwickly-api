@@ -1,12 +1,12 @@
 import { eq, and, isNull, sql, desc, or, ilike } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
-import { tenants, branches, users, orders, auditLogs } from '../../db/schema/index.ts';
+import { tenants, branches, users, orders, auditLogs, tenantBrandings } from '../../db/schema/index.ts';
 
 export class PlatformService {
   /**
    * List all tenants in the system along with user and branch counts.
    */
-  async listTenants(page: number = 1, limit: number = 12, search?: string) {
+  async listTenants(page: number = 1, limit: number = 12, search?: string, status?: string, plan?: string) {
     const offset = (page - 1) * limit;
 
     let baseConditions = isNull(tenants.deletedAt);
@@ -19,6 +19,14 @@ export class PlatformService {
           ilike(tenants.email, `%${search}%`)
         )
       ) as any;
+    }
+    
+    if (status && status !== 'ALL') {
+      baseConditions = and(baseConditions, eq(tenants.status, status as any)) as any;
+    }
+    
+    if (plan && plan !== 'ALL') {
+      baseConditions = and(baseConditions, eq(tenants.plan, plan as any)) as any;
     }
 
     const [totalRes] = await db
@@ -77,6 +85,7 @@ export class PlatformService {
     address?: string;
     plan?: 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
     brandColor?: string;
+    brandColorSecondary?: string;
   }) {
     const [newTenant] = await db.insert(tenants).values({
       name: data.name,
@@ -88,9 +97,10 @@ export class PlatformService {
     }).returning();
 
     if (newTenant) {
-      await db.insert(require('../../db/schema/index.ts').tenantBranding).values({
+      await db.insert(tenantBrandings).values({
         tenantId: newTenant.id,
         brandColor: data.brandColor || '#6366F1',
+        brandColorSecondary: data.brandColorSecondary,
       });
     }
 
@@ -280,8 +290,8 @@ export class PlatformService {
 
     const [branding] = await db
       .select()
-      .from(require('../../db/schema/index.ts').tenantBranding)
-      .where(eq(require('../../db/schema/index.ts').tenantBranding.tenantId, tenantId));
+      .from(tenantBrandings)
+      .where(eq(tenantBrandings.tenantId, tenantId));
 
     // Return the data needed by the frontend auth store to mock the tenant context
     return {

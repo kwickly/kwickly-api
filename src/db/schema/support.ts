@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, uuid, varchar, pgEnum , index} from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, pgEnum, index } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 import { tenants } from './tenants';
 import { users } from './users';
 
@@ -36,3 +37,30 @@ export const ticketMessages = pgTable('ticket_messages', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 });
+
+export const supportTicketsRelations = relations(supportTickets, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [supportTickets.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [supportTickets.createdById],
+    references: [users.id],
+  }),
+  assignedTo: one(users, {
+    fields: [supportTickets.assignedToId],
+    references: [users.id],
+  }),
+  messages: many(ticketMessages),
+}));
+
+export const ticketMessagesRelations = relations(ticketMessages, ({ one }) => ({
+  ticket: one(supportTickets, {
+    fields: [ticketMessages.ticketId],
+    references: [supportTickets.id],
+  }),
+  sender: one(users, {
+    fields: [ticketMessages.senderId],
+    references: [users.id],
+  }),
+}));

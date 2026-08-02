@@ -48,13 +48,15 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
   .get('/tenants', async ({ query }) => {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const limit = query.limit ? parseInt(query.limit, 10) : 12;
-    const result = await platformService.listTenants(page, limit, query.search);
+    const result = await platformService.listTenants(page, limit, query.search, query.status, query.plan);
     return { success: true, ...result };
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
+      status: t.Optional(t.String()),
+      plan: t.Optional(t.String()),
     })
   })
 
@@ -79,6 +81,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
         t.Literal('ENTERPRISE')
       ])),
       brandColor: t.Optional(t.String()),
+      brandColorSecondary: t.Optional(t.String()),
     })
   })
 
@@ -117,6 +120,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
         phone: tenants.phone,
         email: tenants.email,
         brandColor: tenantBrandings.brandColor,
+        brandColorSecondary: tenantBrandings.brandColorSecondary,
         logoUrl: tenantBrandings.logoUrl,
         logoMetadata: tenantBrandings.logoMetadata,
         logoDarkUrl: tenantBrandings.logoDarkUrl,
@@ -172,6 +176,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
           .update(tenantBrandings)
           .set({
             brandColor: brandingData.brandColor,
+            brandColorSecondary: brandingData.brandColorSecondary,
             logoUrl: brandingData.logoUrl,
             logoMetadata: brandingData.logoMetadata,
             logoDarkUrl: brandingData.logoDarkUrl,
@@ -189,6 +194,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
           .values({
             tenantId: id,
             brandColor: brandingData.brandColor || '#4f46e5',
+            brandColorSecondary: brandingData.brandColorSecondary,
             logoUrl: brandingData.logoUrl,
             logoMetadata: brandingData.logoMetadata,
             logoDarkUrl: brandingData.logoDarkUrl,
@@ -206,6 +212,7 @@ export const platformController = new Elysia({ prefix: '/v1/platform' })
     body: t.Partial(t.Object({
       name: t.String(),
       brandColor: t.String(),
+      brandColorSecondary: t.Optional(t.String()),
       logoUrl: t.Optional(t.String()),
       logoMetadata: t.Optional(t.Any()),
       logoDarkUrl: t.Optional(t.String()),

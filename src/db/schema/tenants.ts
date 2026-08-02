@@ -29,6 +29,13 @@ export const tenantStatusEnum = pgEnum('tenant_status', [
   'TERMINATED',
 ]);
 
+export const dietaryTypeEnum = pgEnum('dietary_type', [
+  'PURE_VEG',
+  'VEG_AND_NON_VEG',
+  'VEGAN',
+  'CUSTOM',
+]);
+
 // ─── Tenants Table ────────────────────────────────────────────────────────────
 export const tenants = pgTable('tenants', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -40,6 +47,7 @@ export const tenants = pgTable('tenants', {
   baseCurrency: text('base_currency').default('INR').notNull(),
   plan:        tenantPlanEnum('plan').default('BASIC').notNull(),
   status:      tenantStatusEnum('status').default('ACTIVE').notNull(),
+  dietaryType: dietaryTypeEnum('dietary_type').default('VEG_AND_NON_VEG').notNull(),
   billingModel: text('billing_model').default('FLAT').notNull(), // 'FLAT' | 'METERED'
   baseFee:      numeric('base_fee', { precision: 10, scale: 2 }).default('499.00').notNull(),
   customOrderRate: numeric('custom_order_rate', { precision: 10, scale: 2 }),
